@@ -183,7 +183,6 @@ function injetarBotaoHeader(header) {
     abertoPeloAgendador = true;
     const simularClique = (elemento, nomeElemento = "elemento") => {
       if (!elemento) return;
-      console.log(`[WAgenda] Simulando clique em: ${nomeElemento}`, elemento);
 
       const disparar = (el) => {
         if (!el) return;
@@ -264,13 +263,6 @@ function injetarBotaoHeader(header) {
         btnNovaConversa &&
         (btnNovaConversa.offsetWidth > 0 || btnNovaConversa.offsetHeight > 0);
 
-      console.log(
-        "[WAgenda] Tentando abrir nova conversa. Encontrado no DOM?",
-        !!btnNovaConversa,
-        "Está visível na tela?",
-        estaVisivel,
-      );
-
       if (btnNovaConversa && estaVisivel) {
         simularClique(btnNovaConversa, "Nova Conversa");
         return true;
@@ -287,22 +279,13 @@ function injetarBotaoHeader(header) {
       if (label) currentTab = label;
     }
 
-    console.log("[WAgenda] Aba ativa detectada na decisão:", currentTab);
-
     if (currentTab && currentTab !== "Conversas") {
       const btnConversas = document.querySelector(
         'button[aria-label="Conversas"]',
       );
-      console.log(
-        "[WAgenda] Redirecionando para aba Conversas...",
-        btnConversas,
-      );
       if (btnConversas) {
         simularClique(btnConversas, "Aba Conversas");
         setTimeout(() => {
-          console.log(
-            "[WAgenda] Abrindo nova conversa pós redirecionamento...",
-          );
           abrirNovaConversa();
         }, 600);
       } else {
