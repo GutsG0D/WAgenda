@@ -4,7 +4,7 @@
 
 [![Ask DeepWiki](https://devin.ai/assets/askdeepwiki.png)](https://deepwiki.com/GutsG0D/WAgenda)
 [![AGPL License](https://img.shields.io/badge/license-AGPL-blue.svg)](http://www.gnu.org/licenses/agpl-3.0)
-[![Javascript](https://img.shields.io/badge/Javascript-100%-yellow.svg)](http://www.gnu.org/licenses/agpl-3.0)
+[![Javascript](https://img.shields.io/badge/Javascript-100%-yellow.svg)]
 [![GitHub Repo stars](https://img.shields.io/github/stars/GutsG0D/WAgenda)](https://github.com/GutsG0D/WAgenda)
 
 WAgenda is a Chrome extension that allows you to schedule messages on WhatsApp Web. It seamlessly integrates into the WhatsApp interface, providing a user-friendly way to automate your messaging.
