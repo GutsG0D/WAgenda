@@ -11,6 +11,22 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     });
     return true;
   }
+  if (request.action === "agendar_mensagem_multipla") {
+    const msgsData = request.dataList;
+    chrome.storage.local.get({ mensagensPendentes: [] }, (result) => {
+      const lista = result.mensagensPendentes;
+      msgsData.forEach((msg) => {
+        lista.push(msg);
+      });
+      chrome.storage.local.set({ mensagensPendentes: lista }, () => {
+        msgsData.forEach((msg) => {
+          chrome.alarms.create(msg.id, { when: msg.tempo });
+        });
+        sendResponse({ status: "ok" });
+      });
+    });
+    return true;
+  }
   if (request.action === "cancelar_agendamento") {
     chrome.alarms.clear(request.id, (wasCleared) => {
       sendResponse({ status: "ok", wasCleared });

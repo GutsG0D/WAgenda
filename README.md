@@ -17,11 +17,14 @@ _O WAgenda é uma extensão para o Chrome que permite agendar mensagens no Whats
 ## Features 🇺🇸
 
 - **Integrated UI**: Adds a clock icon to the WhatsApp Web header to access all scheduling features without leaving the page.
-- **In-Page Scheduling**: Schedule new messages by selecting a contact directly from your list and filling out a detailed modal.
+- **In-Page Multi-Contact Scheduling**: Schedule a single message to multiple recipients at once by selecting multiple contacts directly from your list.
+- **Visual Contact Picker inside Modal**: A beautiful contact display inside the modal showing profile pictures, names, and quick-remove `✖` buttons.
+- **"+ Add Contact" Flow**: Seamless transition to select additional recipients from the WhatsApp Web drawer without losing your typed message or date.
 - **Message Management**: View, manage, and cancel all your pending scheduled messages in a dedicated panel.
 - **Rich Text Input**: An advanced message composition box with a built-in emoji picker, complete with search and recent emojis functionality.
 - **Scheduler Identification**: Add your name as the "scheduler" for each message, providing context for shared accounts.
 - **Automated Sending**: A "robot" mode takes over to send the message at the scheduled time, displaying an overlay to prevent user interference.
+- **Sent History Navigation**: View the history of sent messages in an elegant, well-spaced list. Click on any past message to automatically search for it in the WhatsApp Web search input and open the corresponding conversation directly!
 - **Pending Count Badge**: A badge on the WAgenda icon shows the number of currently scheduled messages.
 
 ---
@@ -29,11 +32,14 @@ _O WAgenda é uma extensão para o Chrome que permite agendar mensagens no Whats
 ### Funcionalidades 🇧🇷
 
 - **Interface Integrada**: Adiciona um ícone de relógio ao cabeçalho do WhatsApp Web para acessar todos os recursos de agendamento sem sair da página.
-- **Agendamento na Página**: Agende novas mensagens selecionando um contato diretamente da sua lista e preenchendo um modal detalhado.
+- **Agendamento Multi-Contato**: Agende uma única mensagem para vários contatos de uma só vez selecionando múltiplos destinatários da sua lista.
+- **Seletor Visual de Contatos no Modal**: Exibição premium no modal mostrando as fotos de perfil, nomes e botões `✖` para remoção rápida de destinatários.
+- **Fluxo "+ Adicionar Contato"**: Transição inteligente para selecionar novos destinatários a partir da gaveta nativa do WhatsApp sem perder o texto ou a data que você já digitou.
 - **Gerenciamento de Mensagens**: Visualize, gerencie e cancele todas as suas mensagens agendadas pendentes em um painel dedicado.
 - **Entrada de Texto Rico**: Uma caixa avançada de composição de mensagens com um seletor de emojis integrado, contendo busca e emojis recentes.
 - **Identificação do Agendador**: Adicione seu nome como o "agendador" de cada mensagem, fornecendo contexto para contas compartilhadas.
 - **Envio Automatizado**: Um modo "robô" assume o controle para enviar a mensagem no horário agendado, exibindo uma tela de bloqueio para evitar a interferência do usuário.
+- **Navegação do Histórico de Envios**: Visualize o histórico de mensagens enviadas em uma lista espaçada e elegante. Clique em qualquer card do histórico para que a extensão busque a mensagem na busca nativa do WhatsApp e abra a conversa do destinatário correspondente na hora!
 - **Selo de Contagem de Pendentes**: Um selo (badge) no ícone do WAgenda mostra a quantidade de mensagens agendadas atualmente.
 
 ## How It Works 🇺🇸

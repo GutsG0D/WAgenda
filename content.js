@@ -4,6 +4,10 @@ let gavetaEstavaAberta = false;
 let roboTrabalhando = false;
 let timerAgrupamento = null;
 let imgUrl = "";
+let contatosSelecionados = [];
+let tempMsgText = "";
+let tempScheduleDate = "";
+let pularPainelEIrDiretoParaBusca = false;
 
 let inicializado = false;
 const observer = new MutationObserver((mutations) => {
@@ -50,7 +54,8 @@ function injetarEstilosOcultacao() {
         body.agendador-ativo .rel-fundo { display: block; fill: var(--WDS-content-action-default, #00a884); }
         body.agendador-ativo .rel-borda { display: none; }
         body.agendador-ativo .rel-ponteiros { fill: var(--panel-header-background, #202c33); }
-        #wa-painel-injetado { flex: 1; overflow-y: auto; background-color: var(--drawer-background, #111b21); padding: 15px; display: flex; flex-direction: column; }
+        #wa-painel-injetado { position: relative; flex: 1; overflow: hidden; background-color: var(--drawer-background, #111b21); display: flex; flex-direction: column; height: 100%; }
+        #wa-painel-conteudo-scroll { flex: 1; overflow-y: auto; padding: 15px; padding-bottom: 60px; display: flex; flex-direction: column; }
         .sa-btn-nova { background: var(--WDS-persistent-always-branded); color: var(--WDS-content-on-accent, #ffffff); border: none; padding: 14px; width: 100%; border-radius: 4px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 13px; margin-bottom: 25px; transition: filter 0.2s; }
         .sa-btn-nova:hover { filter: brightness(0.9); }
         .sa-item { display: flex; flex-direction: row; align-items: center; min-height: 72px; height: auto; margin-inline-start: 10px; margin-inline-end: 10px; margin-bottom: 2px; padding: 10px 12px; border-radius: var(--xb871un, 8px); background-color: transparent; cursor: pointer; transition: background-color 0.2s; }
@@ -65,6 +70,107 @@ function injetarEstilosOcultacao() {
         .sa-item-msg { font-size: 14px; color: var(--secondary-lighter, #aebac1); font-style: normal; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-grow: 1; margin-top: 2px;}
         .sa-item-del { box-sizing: border-box; height: 26px; padding: 0 12px; margin-left: 8px; margin-top: 2px; background-color: var(--WDS-danger-deemphasized, rgba(234, 0, 56, 0.1)); color: var(--WDS-danger-emphasized, #ea0038); border: 1px solid var(--WDS-lines-outline-deemphasized, rgba(255,255,255,0.1)); border-radius: var(--x1lh8xxe, 24px); display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 545; font-family: inherit; cursor: pointer; transition: filter 0.2s; flex-shrink: 0; }
         .sa-item-del:hover { filter: brightness(1.2); }
+
+        #wa-historico-drawer {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          height: 48px;
+          background-color: var(--drawer-background, #111b21);
+          border-top: 1px solid var(--border-default, rgba(134,150,160,0.15));
+          display: flex;
+          flex-direction: column;
+          transition: height 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+          z-index: 100;
+          box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.35);
+          overflow: hidden;
+        }
+        #wa-historico-drawer.aberto {
+          height: 75%;
+        }
+        .wa-historico-header {
+          height: 48px;
+          min-height: 48px;
+          background-color: var(--panel-header-background, #202c33);
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0 16px;
+          cursor: pointer;
+          user-select: none;
+          transition: background-color 0.2s;
+          border-bottom: 1px solid rgba(134,150,160,0.1);
+        }
+        .wa-historico-header:hover {
+          background-color: var(--background-default-hover, rgba(134, 150, 160, 0.15));
+        }
+        .wa-historico-titulo-wrapper {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .wa-historico-titulo {
+          font-size: 14px;
+          font-weight: 545;
+          color: var(--primary, #e9edef);
+        }
+        .wa-historico-badge {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+          background-color: var(--WDS-persistent-always-branded, #25D366);
+          color: var(--WDS-content-on-accent, #ffffff);
+          border-radius: 9999px;
+          font-size: 0.75rem;
+          padding: 2px;
+          font-weight: bold;
+          line-height: 1;
+          min-width: 16px;
+          height: 16px;
+        }
+        .wa-historico-seta {
+          color: var(--icon, #8696a0);
+          transition: transform 0.3s ease;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        #wa-historico-drawer.aberto .wa-historico-seta {
+          transform: rotate(180deg);
+        }
+        .wa-historico-conteudo {
+          flex: 1;
+          overflow-y: auto;
+          padding: 0;
+          display: flex;
+          flex-direction: column;
+        }
+        .wa-historico-limpar {
+          align-self: flex-end;
+          font-size: 12px;
+          color: var(--WDS-danger-emphasized, #ea0038);
+          cursor: pointer;
+          background: transparent;
+          border: none;
+          padding: 6px 12px;
+          margin-top: 10px;
+          margin-right: 15px;
+          margin-bottom: 5px;
+          font-weight: 545;
+          transition: opacity 0.2s;
+        }
+        .wa-historico-limpar:hover {
+          opacity: 0.8;
+          text-decoration: underline;
+        }
+        .wa-historico-item {
+          border-left: 3px solid var(--WDS-content-external-link, #21c063);
+          margin-inline-start: 10px;
+          margin-inline-end: 10px;
+          margin-bottom: 12px;
+          border-radius: 8px;
+        }
 
         #wa-bloqueador-interacao {
           position: fixed;
@@ -181,94 +287,6 @@ function injetarBotaoHeader(header) {
   atualizarContadorBadge();
   btnAgenda.addEventListener("click", () => {
     abertoPeloAgendador = true;
-    const simularClique = (elemento, nomeElemento = "elemento") => {
-      if (!elemento) return;
-
-      const disparar = (el) => {
-        if (!el) return;
-        try {
-          // PointerEvents para o React/Web
-          el.dispatchEvent?.(
-            new PointerEvent("pointerdown", {
-              bubbles: true,
-              cancelable: true,
-              view: window,
-              button: 0,
-            }),
-          );
-          el.dispatchEvent?.(
-            new PointerEvent("pointerup", {
-              bubbles: true,
-              cancelable: true,
-              view: window,
-              button: 0,
-            }),
-          );
-
-          // MouseEvents clássicos
-          el.dispatchEvent?.(
-            new MouseEvent("mousedown", {
-              bubbles: true,
-              cancelable: true,
-              view: window,
-              button: 0,
-            }),
-          );
-          el.dispatchEvent?.(
-            new MouseEvent("mouseup", {
-              bubbles: true,
-              cancelable: true,
-              view: window,
-              button: 0,
-            }),
-          );
-
-          el.click?.();
-
-          el.dispatchEvent?.(
-            new MouseEvent("click", {
-              bubbles: true,
-              cancelable: true,
-              view: window,
-              button: 0,
-            }),
-          );
-        } catch (e) {
-          console.error(`[WAgenda] Erro ao disparar clique em el:`, el, e);
-        }
-      };
-
-      // Dispara em cascata subindo a árvore DOM (pais)
-      let atual = elemento;
-      for (let i = 0; i < 4; i++) {
-        if (!atual) break;
-        disparar(atual);
-        atual = atual.parentElement;
-      }
-
-      // Dispara em cascata descendo a árvore DOM (filhos)
-      elemento
-        .querySelectorAll("div, span, svg, path")
-        .forEach((child) => disparar(child));
-    };
-
-    const abrirNovaConversa = () => {
-      const btnNovaConversa =
-        document.querySelector('button[aria-label="Nova conversa"]') ||
-        document
-          .querySelector('span[data-icon="new-chat-outline"]')
-          ?.closest("button");
-
-      const estaVisivel =
-        btnNovaConversa &&
-        (btnNovaConversa.offsetWidth > 0 || btnNovaConversa.offsetHeight > 0);
-
-      if (btnNovaConversa && estaVisivel) {
-        simularClique(btnNovaConversa, "Nova Conversa");
-        return true;
-      }
-      return false;
-    };
 
     // Garante leitura em tempo real da aba ativa antes de decidir a ação
     const btnAtivo =
@@ -295,6 +313,95 @@ function injetarBotaoHeader(header) {
       abrirNovaConversa();
     }
   });
+}
+
+function simularClique(elemento, nomeElemento = "elemento") {
+  if (!elemento) return;
+
+  const disparar = (el) => {
+    if (!el) return;
+    try {
+      // PointerEvents para o React/Web
+      el.dispatchEvent?.(
+        new PointerEvent("pointerdown", {
+          bubbles: true,
+          cancelable: true,
+          view: window,
+          button: 0,
+        }),
+      );
+      el.dispatchEvent?.(
+        new PointerEvent("pointerup", {
+          bubbles: true,
+          cancelable: true,
+          view: window,
+          button: 0,
+        }),
+      );
+
+      // MouseEvents clássicos
+      el.dispatchEvent?.(
+        new MouseEvent("mousedown", {
+          bubbles: true,
+          cancelable: true,
+          view: window,
+          button: 0,
+        }),
+      );
+      el.dispatchEvent?.(
+        new MouseEvent("mouseup", {
+          bubbles: true,
+          cancelable: true,
+          view: window,
+          button: 0,
+        }),
+      );
+
+      el.click?.();
+
+      el.dispatchEvent?.(
+        new MouseEvent("click", {
+          bubbles: true,
+          cancelable: true,
+          view: window,
+          button: 0,
+        }),
+      );
+    } catch (e) {
+      console.error(`[WAgenda] Erro ao disparar clique em el:`, el, e);
+    }
+  };
+
+  // Dispara em cascata subindo a árvore DOM (pais)
+  let atual = elemento;
+  for (let i = 0; i < 4; i++) {
+    if (!atual) break;
+    disparar(atual);
+    atual = atual.parentElement;
+  }
+
+  // Dispara em cascata descendo a árvore DOM (filhos)
+  elemento
+    .querySelectorAll("div, span, svg, path")
+    .forEach((child) => disparar(child));
+}
+
+function abrirNovaConversa() {
+  const btnNovaConversa =
+    document.querySelector('button[aria-label="Nova conversa"]') ||
+    document
+      .querySelector('span[data-icon="new-chat-outline"]')
+      ?.closest("button");
+
+  const estaVisivel =
+    btnNovaConversa &&
+    (btnNovaConversa.offsetWidth > 0 || btnNovaConversa.offsetHeight > 0);
+
+  if (btnNovaConversa && estaVisivel) {
+    simularClique(btnNovaConversa, "Nova Conversa");
+    return true;
+  }
+  return false;
 }
 
 function atualizarContadorBadge() {
@@ -335,9 +442,44 @@ function injetarPainelNaGaveta(drawer) {
   mudarTituloGaveta(drawer, "Mensagens Agendadas");
   const painel = document.createElement("div");
   painel.id = "wa-painel-injetado";
-  painel.innerHTML = `<button class="sa-btn-nova" id="wa-btn-chamar-busca">Agendar Nova Mensagem</button><div id="wa-lista-agendamentos"></div>`;
+  painel.innerHTML = `
+    <div id="wa-painel-conteudo-scroll">
+      <button class="sa-btn-nova" id="wa-btn-chamar-busca">Agendar Nova Mensagem</button>
+      <div id="wa-lista-agendamentos"></div>
+    </div>
+    <div id="wa-historico-drawer">
+      <div class="wa-historico-header" id="wa-historico-header-btn">
+        <div class="wa-historico-titulo-wrapper">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" style="color: var(--icon, #8696a0);"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6a7 7 0 1 1 7 7 7 7 0 0 1-5.03-2.13l-1.42 1.42A8.9 8.9 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+          <span class="wa-historico-titulo">Histórico de Envios</span>
+          <span class="wa-historico-badge" id="wa-historico-contador">0</span>
+        </div>
+        <div class="wa-historico-seta">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 8.5L6 14.5L7.4 15.9L12 11.3L16.6 15.9L18 14.5L12 8.5Z"/></svg>
+        </div>
+      </div>
+      <div class="wa-historico-conteudo" id="wa-historico-conteudo-lista"></div>
+    </div>
+  `;
   drawer.appendChild(painel);
   renderizarLista();
+  renderizarHistorico();
+
+  if (pularPainelEIrDiretoParaBusca) {
+    painel.style.display = "none";
+    drawer.classList.remove("wa-gaveta-sequestrada");
+    mudarTituloGaveta(drawer, "Agendar nova mensagem");
+    modoAgendamento = true;
+    pularPainelEIrDiretoParaBusca = false;
+  }
+
+  document
+    .getElementById("wa-historico-header-btn")
+    .addEventListener("click", () => {
+      const dr = document.getElementById("wa-historico-drawer");
+      dr.classList.toggle("aberto");
+    });
+
   document
     .getElementById("wa-btn-chamar-busca")
     .addEventListener("click", () => {
@@ -345,6 +487,11 @@ function injetarPainelNaGaveta(drawer) {
       drawer.classList.remove("wa-gaveta-sequestrada");
       mudarTituloGaveta(drawer, "Agendar nova mensagem");
       modoAgendamento = true;
+
+      // Reseta contatos selecionados e estados temporários
+      contatosSelecionados = [];
+      tempMsgText = "";
+      tempScheduleDate = "";
     });
 }
 
@@ -356,6 +503,205 @@ function mudarTituloGaveta(drawer, novoTexto) {
     const span = tituloContainer.querySelector("span");
     if (span) span.textContent = novoTexto;
   }
+}
+
+function renderizarHistorico() {
+  const container = document.getElementById("wa-historico-conteudo-lista");
+  const contador = document.getElementById("wa-historico-contador");
+  if (!container) return;
+
+  chrome.storage.local.get({ historicoMensagens: [] }, (result) => {
+    const lista = result.historicoMensagens || [];
+    if (contador) contador.innerText = lista.length;
+
+    if (lista.length === 0) {
+      container.innerHTML = `
+        <div style="text-align: center; color: #8696a0; font-size: 13px; margin-top: 30px; margin-bottom: 30px;">
+          Nenhuma mensagem enviada ainda.
+        </div>
+      `;
+      return;
+    }
+
+    // ORDENAÇÃO: Descendente (Mais recente primeiro no histórico)
+    lista.sort((a, b) => b.enviadoEm - a.enviadoEm);
+
+    let html = `
+      <button class="wa-historico-limpar" id="wa-btn-limpar-historico">Limpar Histórico</button>
+      <div id="wa-historico-lista-itens"></div>
+    `;
+    container.innerHTML = html;
+
+    document
+      .getElementById("wa-btn-limpar-historico")
+      .addEventListener("click", () => {
+        if (confirm("Deseja realmente limpar todo o histórico de envios?")) {
+          chrome.storage.local.set({ historicoMensagens: [] }, () => {
+            renderizarHistorico();
+          });
+        }
+      });
+
+    const itensContainer = document.getElementById("wa-historico-lista-itens");
+
+    lista.forEach((item) => {
+      const dataObjeto = new Date(item.enviadoEm || item.tempo);
+      const dataFormatada =
+        dataObjeto.toLocaleDateString("pt-BR") +
+        " às " +
+        dataObjeto.toLocaleTimeString("pt-BR", {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+
+      const card = document.createElement("div");
+      card.className = "sa-item wa-historico-item";
+
+      const svgNativo = () =>
+        `<svg viewBox="0 0 48 48" preserveAspectRatio="xMidYMid meet" class="sa-default-avatar" fill="none"><path d="M24 23q-1.857 0-3.178-1.322Q19.5 20.357 19.5 18.5t1.322-3.178T24 14t3.178 1.322Q28.5 16.643 28.5 18.5t-1.322 3.178T24 23m-6.75 10q-.928 0-1.59-.66-.66-.662-.66-1.59v-.9q0-.956.492-1.758A3.3 3.3 0 0 1 16.8 26.87a16.7 16.7 0 0 1 3.544-1.308q1.8-.435 3.656-.436 1.856 0 3.656.436T31.2 26.87q.816.422 1.308 1.223T33 29.85v.9q0 .928-.66 1.59-.662.66-1.59.66z" fill="#21c063"></path></svg>`;
+
+      const imgHtml =
+        item.imagem && item.imagem.trim() !== ""
+          ? `<img src="${item.imagem}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`
+          : svgNativo();
+
+      const agendadorHtml = item.agendador
+        ? `<div style="font-size: 11px; color: var(--secondary, #8696a0); margin-top: 1px;">Agendado por: ${item.agendador}</div>`
+        : "";
+
+      card.innerHTML = `
+        <div class="sa-item-avatar">${imgHtml}</div>
+        <div class="sa-item-content">
+          <div class="sa-item-row">
+            <div class="sa-item-nome">${item.nome}</div>
+            <div class="sa-item-data" style="color: var(--WDS-content-external-link, #21c063); font-weight: 500;">Enviado</div>
+          </div>
+          <div class="sa-item-row" style="margin-top: 2px;">
+            <div class="sa-item-msg">${item.mensagem}</div>
+            <div class="sa-item-del" data-id="${item.id}">Excluir</div>
+          </div>
+          ${agendadorHtml}
+          <div style="font-size: 11px; color: var(--secondary, #8696a0); margin-top: 1px; opacity: 0.8;">Enviado em: ${dataFormatada}</div>
+        </div>
+      `;
+
+      card.addEventListener("click", () => {
+        // PASSO 1: Fechar a gaveta do Histórico de Envios para não obstruir a tela
+        const dr = document.getElementById("wa-historico-drawer");
+        if (dr) dr.classList.remove("aberto");
+
+        // PASSO 2: Ocultar/fechar o painel lateral sequestrado do WAgenda.
+        // Simulamos o clique no botão "Voltar" nativo do WhatsApp Web (suportando múltiplas versões de ícones e atributos de acessibilidade).
+        const btnVoltar =
+          document
+            .querySelector('span[data-icon="back-refreshed"]')
+            ?.closest("button") ||
+          document.querySelector('span[data-icon="back"]')?.closest("button") ||
+          document
+            .querySelector('span[data-icon="x-viewer"]')
+            ?.closest("button") ||
+          document.querySelector('button[aria-label="Fechar"]');
+        if (btnVoltar) btnVoltar.click();
+
+        // PASSO 3: Aguardar o fechamento visual da gaveta lateral (400ms) e buscar o input global de pesquisa de conversas do WhatsApp Web.
+        setTimeout(() => {
+          const searchInput =
+            document.querySelector(
+              'input[placeholder="Pesquisar ou começar uma nova conversa"]',
+            ) ||
+            document.querySelector(
+              'input[aria-label="Pesquisar ou começar uma nova conversa"]',
+            ) ||
+            document.getElementById("_r_a_") ||
+            document.querySelector('input[role="textbox"]');
+
+          if (searchInput) {
+            // Dar foco e selecionar qualquer texto antigo presente no campo de busca
+            searchInput.focus();
+            searchInput.select();
+
+            // PASSO 3.1: Inserir a mensagem como termo de busca e disparar um evento nativo 'input' com bubbles=true.
+            // Isso é CRÍTICO para que o React (framework interno do WhatsApp Web) perceba a mudança de estado e processe a pesquisa.
+            searchInput.value = item.mensagem;
+            searchInput.dispatchEvent(new Event("input", { bubbles: true }));
+
+            // PASSO 4: Aguardar 1000ms para o carregamento assíncrono dos resultados no DOM e buscar a linha correta.
+            setTimeout(() => {
+              const rows = document.querySelectorAll(
+                '[data-testid="chat-list"] [role="row"], #pane-side [role="row"], [data-testid="cell-frame-container"]',
+              );
+
+              let targetResult = null;
+              for (const row of rows) {
+                // PASSO 4.1: Ignorar os cabeçalhos de seção gerados pela busca (Ex: o texto estático "Mensagens")
+                if (row.querySelector('[data-testid="section-header"]')) {
+                  continue;
+                }
+
+                // PASSO 4.2: Localizar o elemento que contém o nome do contato correspondente
+                const titleEl =
+                  row.querySelector(
+                    '[data-testid="cell-frame-title"] span[title]',
+                  ) ||
+                  row.querySelector('[data-testid="cell-frame-title"] span') ||
+                  row.querySelector('[data-testid="cell-frame-title"]') ||
+                  row.querySelector("span[title]");
+                if (titleEl) {
+                  const nameInRow =
+                    titleEl.getAttribute("title") || titleEl.textContent.trim();
+
+                  // PASSO 4.3: Se o nome exibido na linha coincidir com o destinatário original do histórico, elegemos esta linha
+                  if (
+                    nameInRow &&
+                    nameInRow.toLowerCase().includes(item.nome.toLowerCase())
+                  ) {
+                    targetResult = row;
+                    break;
+                  }
+                }
+              }
+
+              // PASSO 4.4: Fallback caso não encontremos o contato correspondente pelo nome (pega o primeiro resultado de mensagem válido)
+              if (!targetResult && rows.length > 0) {
+                targetResult = Array.from(rows).find(
+                  (row) => !row.querySelector('[data-testid="section-header"]'),
+                );
+              }
+
+              // PASSO 5: Simular o clique com eventos nativos de mouse e ponteiro no elemento interativo correto da linha
+              if (targetResult) {
+                const clickTarget =
+                  targetResult.querySelector('[role="gridcell"]') ||
+                  targetResult.querySelector(
+                    '[data-testid^="chatlist-message-"]',
+                  ) ||
+                  targetResult;
+                simularClique(clickTarget);
+              } else {
+                console.log("[WAgenda] Nenhum resultado de busca encontrado.");
+              }
+            }, 1000);
+          }
+        }, 400);
+      });
+
+      card.querySelector(".sa-item-del").addEventListener("click", (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        const id = e.target.getAttribute("data-id");
+        chrome.storage.local.get({ historicoMensagens: [] }, (res) => {
+          const nova = (res.historicoMensagens || []).filter(
+            (i) => i.id !== id,
+          );
+          chrome.storage.local.set({ historicoMensagens: nova }, () => {
+            renderizarHistorico();
+          });
+        });
+      });
+
+      itensContainer.appendChild(card);
+    });
+  });
 }
 
 function renderizarLista() {
@@ -430,7 +776,7 @@ document.addEventListener(
     if (spanNome) {
       const nome = spanNome.getAttribute("title");
       const imgElement = cardContato.querySelector('img[src*="whatsapp.net"]');
-      imgUrl = imgElement ? imgElement.src : "";
+      const clickedImgUrl = imgElement ? imgElement.src : "";
       const btnVoltar =
         document
           .querySelector('span[data-icon="back-refreshed"]')
@@ -439,7 +785,18 @@ document.addEventListener(
       if (btnVoltar) btnVoltar.click();
       modoAgendamento = false;
       abertoPeloAgendador = false;
-      abrirModalAgendamento(nome);
+
+      // Se já existe contato na lista (porque veio do botão +), adiciona se não for duplicado
+      if (contatosSelecionados.length > 0) {
+        if (!contatosSelecionados.find((c) => c.nome === nome)) {
+          contatosSelecionados.push({ nome: nome, imagem: clickedImgUrl });
+        }
+      } else {
+        // Primeiro contato
+        contatosSelecionados = [{ nome: nome, imagem: clickedImgUrl }];
+      }
+
+      abrirModalAgendamento();
       e.stopPropagation();
       e.preventDefault();
     }
@@ -447,9 +804,80 @@ document.addEventListener(
   true,
 );
 
-function abrirModalAgendamento(nome) {
-  document.getElementById("wa-modal-nome").value = nome;
+function atualizarContatosSelecionadosModal() {
+  const container = document.getElementById(
+    "wa-contatos-selecionados-container",
+  );
+  if (!container) return;
+  container.innerHTML = "";
+
+  if (contatosSelecionados.length === 0) {
+    container.innerHTML = `<div style="color: #8696a0; font-size: 13px; font-style: italic; padding: 4px 0;">Nenhum contato selecionado. Adicione clicando no botão abaixo.</div>`;
+    const salvarBtn = document.getElementById("wa-salvar-btn");
+    if (salvarBtn) {
+      salvarBtn.disabled = true;
+      salvarBtn.style.opacity = "0.5";
+      salvarBtn.style.cursor = "not-allowed";
+    }
+    return;
+  }
+
+  const salvarBtn = document.getElementById("wa-salvar-btn");
+  if (salvarBtn) {
+    salvarBtn.disabled = false;
+    salvarBtn.style.opacity = "1";
+    salvarBtn.style.cursor = "pointer";
+  }
+
+  contatosSelecionados.forEach((contato, index) => {
+    const item = document.createElement("div");
+    item.className = "wa-contato-selecionado-item";
+
+    const svgNativo = () =>
+      `<svg viewBox="0 0 48 48" preserveAspectRatio="xMidYMid meet" class="sa-default-avatar" fill="none" style="width: 100%; height: 100%;"><path d="M24 23q-1.857 0-3.178-1.322Q19.5 20.357 19.5 18.5t1.322-3.178T24 14t3.178 1.322Q28.5 16.643 28.5 18.5t-1.322 3.178T24 23m-6.75 10q-.928 0-1.59-.66-.66-.662-.66-1.59v-.9q0-.956.492-1.758A3.3 3.3 0 0 1 16.8 26.87a16.7 16.7 0 0 1 3.544-1.308q1.8-.435 3.656-.436 1.856 0 3.656.436T31.2 26.87q.816.422 1.308 1.223T33 29.85v.9q0 .928-.66 1.59-.662.66-1.59.66z" fill="#25D366"></path></svg>`;
+
+    const imgHtml =
+      contato.imagem && contato.imagem.trim() !== ""
+        ? `<img src="${contato.imagem}">`
+        : svgNativo();
+
+    item.innerHTML = `
+      <div class="wa-contato-selecionado-info">
+        <div class="wa-contato-selecionado-avatar">${imgHtml}</div>
+        <div class="wa-contato-selecionado-nome" title="${contato.nome}">${contato.nome}</div>
+      </div>
+      <button type="button" class="wa-contato-selecionado-remover" data-index="${index}" title="Remover contato">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+      </button>
+    `;
+
+    item
+      .querySelector(".wa-contato-selecionado-remover")
+      .addEventListener("click", (e) => {
+        const idx = parseInt(e.currentTarget.getAttribute("data-index"));
+        contatosSelecionados.splice(idx, 1);
+        atualizarContatosSelecionadosModal();
+      });
+
+    container.appendChild(item);
+  });
+}
+
+function abrirModalAgendamento() {
   document.getElementById("wa-modal-overlay").style.display = "flex";
+
+  const msgInput = document.getElementById("wa-modal-msg");
+  if (tempMsgText && msgInput) {
+    msgInput.value = tempMsgText;
+    msgInput.dispatchEvent(new Event("input"));
+  }
+
+  const dateInput = document.getElementById("wa-modal-data");
+  if (tempScheduleDate && dateInput) {
+    dateInput.value = tempScheduleDate;
+  }
+
+  atualizarContatosSelecionadosModal();
 }
 
 function injetarModalEstilos() {
@@ -1841,6 +2269,89 @@ function injetarModalEstilos() {
           box-shadow: 0 4px 20px rgba(0,0,0,0.6);
           position: relative;
         }
+        #wa-contatos-selecionados-container {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          margin-top: 8px;
+          margin-bottom: 4px;
+          max-height: 160px;
+          overflow-y: auto;
+          padding-right: 4px;
+        }
+        .wa-contato-selecionado-item {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          background: var(--search-input-background, var(--compose-input-background, #2a3942));
+          padding: 8px 12px;
+          border-radius: 8px;
+          border: 1px solid var(--border-default, rgba(134,150,160,0.15));
+        }
+        .wa-contato-selecionado-info {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          min-width: 0;
+        }
+        .wa-contato-selecionado-avatar {
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          overflow: hidden;
+          flex-shrink: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .wa-contato-selecionado-avatar img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+        .wa-contato-selecionado-nome {
+          font-size: 14px;
+          color: var(--primary-strong, var(--primary, #e9edef));
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          font-weight: 500;
+        }
+        .wa-contato-selecionado-remover {
+          color: var(--WDS-danger-emphasized, #ea0038);
+          background: transparent;
+          border: none;
+          font-size: 16px;
+          cursor: pointer;
+          padding: 4px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: opacity 0.2s;
+        }
+        .wa-contato-selecionado-remover:hover {
+          opacity: 0.7;
+        }
+        .wa-btn-adicionar-contato {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          background: transparent;
+          color: var(--WDS-persistent-always-branded, #25D366);
+          border: 1px dashed var(--WDS-persistent-always-branded, #25D366);
+          padding: 8px 16px;
+          border-radius: 20px;
+          font-size: 13px;
+          font-weight: bold;
+          cursor: pointer;
+          margin-top: 4px;
+          margin-bottom: 12px;
+          transition: background-color 0.2s;
+          width: fit-content;
+        }
+        .wa-btn-adicionar-contato:hover {
+          background-color: rgba(37, 211, 102, 0.08);
+        }
         .wa-modal h2 {
           margin-top: 0;
           font-size: 18px;
@@ -2195,9 +2706,13 @@ function injetarModalEstilos() {
     <div class="wa-modal">
       <span class="wa-close" id="wa-fechar-modal">✖</span>
       <h2>Agendar Envio</h2>
-      <label>Contato Selecionado:</label>
-      <input type="text" id="wa-modal-nome" disabled style="background: var(--background-default); color: var(--secondary);">
-      <label>Agendador por:</label>
+      <label>Destinatário(s):</label>
+      <div id="wa-contatos-selecionados-container"></div>
+      <button type="button" class="wa-btn-adicionar-contato" id="wa-btn-adicionar-contato">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="vertical-align: middle; margin-right: 4px;"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+        Adicionar Contato
+      </button>
+      <label>Agendado por:</label>
       <input type="text" id="wa-modal-agendador" placeholder="Digite seu nome">
       <label>Data e Hora:</label>
       <input type="datetime-local" id="wa-modal-data">
@@ -2436,17 +2951,59 @@ function injetarModalEstilos() {
     msgInput.style.height = "auto";
     const agendadorInput = document.getElementById("wa-modal-agendador");
     if (agendadorInput) agendadorInput.value = "";
+
+    // Reseta contatos e estados temporários
+    contatosSelecionados = [];
+    tempMsgText = "";
+    tempScheduleDate = "";
   });
 
+  document
+    .getElementById("wa-btn-adicionar-contato")
+    .addEventListener("click", () => {
+      // PASSO 1: Salvar o estado dos inputs de texto e data do modal atual em variáveis temporárias.
+      // Isso impede que o usuário perca o que já digitou ao fechar o modal para buscar mais contatos.
+      tempMsgText = document.getElementById("wa-modal-msg").value;
+      tempScheduleDate = document.getElementById("wa-modal-data").value;
+
+      // PASSO 2: Ocultar visualmente o modal de agendamento e o seletor de emojis.
+      document.getElementById("wa-modal-overlay").style.display = "none";
+      emojiPicker.style.display = "none";
+
+      const drawer = document.querySelector(
+        'div[data-testid="new-chat-drawer"]',
+      );
+      const painel = document.getElementById("wa-painel-injetado");
+      if (drawer && painel) {
+        // PASSO 3: Se a gaveta de Nova Conversa já está aberta e o painel WAgenda está injetado nela:
+        // Apenas ocultamos o nosso painel WAgenda (`painel.style.display = "none"`) e removemos a estilização 'sequestrada'
+        // para revelar de forma instantânea a lista e barra de busca nativas do WhatsApp Web, sem fechar/reabrir nada.
+        painel.style.display = "none";
+        drawer.classList.remove("wa-gaveta-sequestrada");
+        mudarTituloGaveta(drawer, "Agendar nova mensagem");
+        modoAgendamento = true;
+      } else {
+        // PASSO 4: Se a gaveta não estava aberta, ativamos o fluxo padrão.
+        // Habilitamos a flag `pularPainelEIrDiretoParaBusca` para que, ao carregar a gaveta, ela vá direto para a busca nativa.
+        modoAgendamento = true;
+        abertoPeloAgendador = true;
+        pularPainelEIrDiretoParaBusca = true;
+        abrirNovaConversa();
+      }
+    });
+
   document.getElementById("wa-salvar-btn").addEventListener("click", () => {
-    const nome = document.getElementById("wa-modal-nome").value;
+    if (contatosSelecionados.length === 0) {
+      alert("Adicione pelo menos um destinatário.");
+      return;
+    }
     const agendador = document
       .getElementById("wa-modal-agendador")
       .value.trim();
     const data = document.getElementById("wa-modal-data").value;
     const msg = document.getElementById("wa-modal-msg").value;
     if (!agendador) {
-      alert("Preencha o campo 'Agendador por:'.");
+      alert("Preencha o campo 'Agendado por:'.");
       return;
     }
     if (!data || !msg) {
@@ -2458,18 +3015,25 @@ function injetarModalEstilos() {
       alert("A data deve ser no futuro.");
       return;
     }
+
+    // Cria a lista de agendamentos para cada contato selecionado
+    const dataList = contatosSelecionados.map((contato, idx) => {
+      // Usamos IDs ligeiramente diferentes para que os alarmes funcionem de forma única
+      return {
+        id: `msg_${Date.now()}_${idx}`,
+        nome: contato.nome,
+        agendador: agendador,
+        criadoEm: Date.now(),
+        imagem: contato.imagem,
+        mensagem: msg,
+        tempo: scheduleTime,
+      };
+    });
+
     chrome.runtime.sendMessage(
       {
-        action: "agendar_mensagem",
-        data: {
-          id: `msg_${Date.now()}`,
-          nome: nome,
-          agendador: agendador,
-          criadoEm: Date.now(),
-          imagem: imgUrl,
-          mensagem: msg,
-          tempo: scheduleTime,
-        },
+        action: "agendar_mensagem_multipla",
+        dataList: dataList,
       },
       () => {
         document.getElementById("wa-modal-overlay").style.display = "none";
@@ -2480,7 +3044,13 @@ function injetarModalEstilos() {
         const msgInput = document.getElementById("wa-modal-msg");
         msgInput.value = "";
         msgInput.style.height = "auto";
+
+        // Limpa estado global
+        contatosSelecionados = [];
+        tempMsgText = "";
+        tempScheduleDate = "";
         imgUrl = "";
+
         document.getElementById("btn-agenda-wa").click();
         atualizarContadorBadge();
       },
@@ -2577,21 +3147,32 @@ function processarFila() {
 
     iniciarFluxoDeEnvio(tarefaAtual.nome, tarefaAtual.mensagem, () => {
       removerBloqueador();
-      chrome.storage.local.get({ mensagensPendentes: [] }, (res) => {
-        chrome.storage.local.set(
-          {
-            mensagensPendentes: res.mensagensPendentes.filter(
-              (i) => i.id !== tarefaAtual.id,
-            ),
-          },
-          () => {
-            renderizarLista();
-            atualizarContadorBadge();
-            roboTrabalhando = false;
-            setTimeout(() => processarFila(), 1000);
-          },
-        );
-      });
+      chrome.storage.local.get(
+        { mensagensPendentes: [], historicoMensagens: [] },
+        (res) => {
+          const historico = res.historicoMensagens || [];
+          historico.push({
+            ...tarefaAtual,
+            enviadoEm: Date.now(),
+          });
+
+          chrome.storage.local.set(
+            {
+              historicoMensagens: historico,
+              mensagensPendentes: res.mensagensPendentes.filter(
+                (i) => i.id !== tarefaAtual.id,
+              ),
+            },
+            () => {
+              renderizarLista();
+              renderizarHistorico();
+              atualizarContadorBadge();
+              roboTrabalhando = false;
+              setTimeout(() => processarFila(), 1000);
+            },
+          );
+        },
+      );
     });
   });
 }
