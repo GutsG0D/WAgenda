@@ -8,6 +8,7 @@ let contatosSelecionados = [];
 let tempMsgText = "";
 let tempScheduleDate = "";
 let pularPainelEIrDiretoParaBusca = false;
+let filtroAtivo = null;
 
 let inicializado = false;
 const observer = new MutationObserver((mutations) => {
@@ -29,6 +30,7 @@ const observer = new MutationObserver((mutations) => {
       injetarEstilosOcultacao();
       injetarModalEstilos();
       observarGavetaNativa();
+      inicializarTooltipDelegation();
       inicializado = true;
     }
     injetarBotaoHeader(header);
@@ -41,8 +43,6 @@ function injetarEstilosOcultacao() {
   style.innerHTML = `
         .wa-gaveta-sequestrada > :not(header):not(#wa-painel-injetado) { display: none !important; }
         .wa-gaveta-sequestrada button[aria-label="Número de telefone"],
-        .wa-gaveta-sequestrada span:has(button[aria-label="Número de telefone"]),
-        .wa-gaveta-sequestrada span:has(path[d^="M12 23"]),
         .wa-gaveta-sequestrada button:has(path[d^="M12 23"]) {
           display: none !important;
         }
@@ -56,7 +56,7 @@ function injetarEstilosOcultacao() {
         body.agendador-ativo .rel-ponteiros { fill: var(--panel-header-background, #202c33); }
         #wa-painel-injetado { position: relative; flex: 1; overflow: hidden; background-color: var(--drawer-background, #111b21); display: flex; flex-direction: column; height: 100%; }
         #wa-painel-conteudo-scroll { flex: 1; overflow-y: auto; padding: 15px; padding-bottom: 60px; display: flex; flex-direction: column; }
-        .sa-btn-nova { background: var(--WDS-persistent-always-branded); color: var(--WDS-content-on-accent, #ffffff); border: none; padding: 14px; width: 100%; border-radius: 4px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 13px; margin-bottom: 25px; transition: filter 0.2s; }
+        .sa-btn-nova { background: var(--WDS-accent-deemphasized); color: var(--WDS-content-default, #ffffff); border: none; padding: 14px; width: 100%; border-radius: 4px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 13px; margin-bottom: 25px; transition: filter 0.2s; }
         .sa-btn-nova:hover { filter: brightness(0.9); }
         .sa-item { display: flex; flex-direction: row; align-items: center; min-height: 72px; height: auto; margin-inline-start: 10px; margin-inline-end: 10px; margin-bottom: 2px; padding: 10px 12px; border-radius: var(--xb871un, 8px); background-color: transparent; cursor: pointer; transition: background-color 0.2s; }
         .sa-item:hover { background-color: var(--WDS-surface-highlight, rgba(134,150,160,0.05)); }
@@ -168,7 +168,7 @@ function injetarEstilosOcultacao() {
           border-left: 3px solid var(--WDS-content-external-link, #21c063);
           margin-inline-start: 10px;
           margin-inline-end: 10px;
-          margin-bottom: 12px;
+          margin-bottom: 4px;
           border-radius: 8px;
         }
 
@@ -265,9 +265,980 @@ function injetarEstilosOcultacao() {
           border-radius: 8px;
           border: 1px dashed rgba(134, 150, 160, 0.2);
         }
+
+        #wa-custom-tooltip {
+          position: fixed;
+          background-color: var(--WDS-surface-inverse, #111b21);
+          color: var(--WDS-content-inverse, #e9edef);
+          padding: 8px 12px;
+          border-radius: 4px;
+          font-size: 12px;
+          line-height: 1.4;
+          max-width: 880px;
+          word-break: break-word;
+          white-space: pre-wrap;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+          z-index: 100000;
+          pointer-events: none;
+          opacity: 0;
+          transform: translateY(8px);
+          transition: opacity 0.15s ease, transform 0.15s ease;
+          font-family: var(--font-family, 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif);
+        }
+        #wa-custom-tooltip.visivel {
+          opacity: 1;
+          transform: translateY(0);
+        }
+        #wa-custom-tooltip.wa-tooltip-instantaneo {
+          transition: none !important;
+          transform: none !important;
+        }
+
+        .wa-item-etiqueta-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          color: var(--primary, #e9edef);
+          font-size: 11px;
+          margin-left: 6px;
+          vertical-align: middle;
+          box-sizing: border-box;
+        }
+        .wa-item-etiqueta-badge svg {
+          width: 14px;
+          height: 14px;
+          flex-shrink: 0;
+          display: inline-block;
+          vertical-align: middle;
+        }
+        .wa-item-etiqueta-badge strong {
+          font-weight: 700;
+          color: var(--primary, #e9edef);
+        }
+
+        #wa-btn-filtro, #wa-btn-gerenciar-etiquetas {
+          background: none;
+          border: none;
+          cursor: pointer;
+          height: 40px;
+          width: 40px;
+          padding: 8px;
+          display: inline-flex !important;
+          align-items: center;
+          justify-content: center;
+          border-radius: 50%;
+          transition: background-color 0.2s;
+          margin-left: 8px;
+        }
+        #wa-btn-filtro:hover, #wa-btn-gerenciar-etiquetas:hover {
+          background-color: var(--background-default-hover, rgba(134, 150, 160, 0.15)) !important;
+        }
+        #wa-btn-filtro.ativo, #wa-btn-gerenciar-etiquetas.ativo {
+          background-color: rgba(0, 168, 132, 0.12) !important;
+        }
+        #wa-btn-filtro.ativo:hover, #wa-btn-gerenciar-etiquetas.ativo:hover {
+          background-color: rgba(0, 168, 132, 0.22) !important;
+        }
+
+        #wa-modal-etiqueta-input-escrita {
+          width: 100%;
+          height: 32px;
+          font-size: 14px;
+          padding: 4px 0;
+          border: none !important;
+          border-bottom: 2px solid var(--border-default, rgba(134, 150, 160, 0.25)) !important;
+          background: transparent !important;
+          color: var(--primary, #e9edef) !important;
+          outline: none !important;
+          box-sizing: border-box;
+          transition: border-bottom-color 0.2s ease;
+        }
+        #wa-modal-etiqueta-input-escrita:focus {
+          border-bottom-color: var(--WDS-persistent-always-branded, var(--input-border-active, #00a884)) !important;
+        }
+        #wa-modal-etiqueta-btn-emoji:hover {
+          color: var(--primary-strong, var(--primary, #d1d7db)) !important;
+        }
+
+        #wa-filtro-popover {
+          position: fixed;
+          background-color: var(--dropdown-background, #233138);
+          border: 1px solid var(--border-default, rgba(134,150,160,0.15));
+          border-radius: 8px;
+          box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+          width: 220px;
+          z-index: 100002;
+          overflow: hidden;
+          padding: 10px 0;
+          font-family: var(--font-family, 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif);
+          opacity: 0;
+          transform: translateY(-8px);
+          transition: opacity 0.15s ease, transform 0.15s ease;
+          pointer-events: all;
+        }
+        #wa-filtro-popover.visivel {
+          opacity: 1;
+          transform: translateY(0);
+        }
+        .wa-filtro-popover-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 4px 14px 10px 14px;
+          border-bottom: 1px solid rgba(134, 150, 160, 0.1);
+          font-size: 13px;
+          font-weight: 600;
+          color: var(--primary, #e9edef);
+        }
+        .wa-filtro-limpar-btn {
+          background: transparent;
+          border: none;
+          color: var(--WDS-content-action-default, #00a884);
+          cursor: pointer;
+          font-size: 11px;
+          font-weight: 600;
+          padding: 2px 6px;
+          border-radius: 4px;
+          transition: background-color 0.2s;
+        }
+        .wa-filtro-limpar-btn:hover {
+          background-color: var(--background-default-hover, rgba(134, 150, 160, 0.15));
+        }
+        .wa-filtro-secao {
+          padding: 8px 0;
+        }
+        .wa-filtro-secao-titulo {
+          font-size: 11px;
+          color: var(--secondary, #8696a0);
+          padding: 4px 14px;
+          text-transform: uppercase;
+          font-weight: 600;
+          letter-spacing: 0.3px;
+        }
+        .wa-filtro-opcoes-list {
+          max-height: 120px;
+          overflow-y: auto;
+        }
+        .wa-filtro-opcao {
+          padding: 8px 14px;
+          font-size: 13px;
+          color: var(--primary-strong, var(--primary, #e9edef));
+          cursor: pointer;
+          transition: background-color 0.2s;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .wa-filtro-opcao:hover {
+          background-color: var(--background-default-hover, rgba(134, 150, 160, 0.15));
+        }
+        .wa-filtro-opcao.selecionado {
+          color: var(--WDS-content-action-default, #00a884);
+          background-color: rgba(0, 168, 132, 0.08);
+          font-weight: 600;
+        }
+        .wa-filtro-vazio {
+          font-size: 12px;
+          color: var(--secondary, #8696a0);
+          padding: 6px 14px;
+          font-style: italic;
+        }
+
+        #wa-gerenciar-etiquetas-popover {
+          position: fixed;
+          background-color: var(--dropdown-background, #233138);
+          border: 1px solid var(--border-default, rgba(134,150,160,0.15));
+          border-radius: 8px;
+          box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+          width: 280px;
+          z-index: 100002;
+          overflow: hidden;
+          padding: 10px 0;
+          font-family: var(--font-family, 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif);
+          opacity: 0;
+          transform: translateY(-8px);
+          transition: opacity 0.15s ease, transform 0.15s ease;
+          pointer-events: all;
+        }
+        #wa-gerenciar-etiquetas-popover.visivel {
+          opacity: 1;
+          transform: translateY(0);
+        }
+        .wa-gerenciar-etiquetas-opcao {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 8px 14px;
+          font-size: 13px;
+          color: var(--primary-strong, var(--primary, #e9edef));
+          transition: background-color 0.2s;
+        }
+        .wa-gerenciar-etiquetas-opcao:hover {
+          background-color: var(--background-default-hover, rgba(134, 150, 160, 0.15));
+        }
+        .wa-gerenciar-etiquetas-left {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          max-width: 140px;
+          overflow: hidden;
+        }
+        .wa-gerenciar-etiquetas-left span {
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          font-weight: 500;
+        }
+        .wa-gerenciar-etiquetas-acoes {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+        .wa-gerenciar-etiquetas-btn {
+          background: transparent;
+          border: none;
+          padding: 4px;
+          cursor: pointer;
+          color: var(--icon, #8696a0);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 50%;
+          transition: background-color 0.2s, color 0.2s;
+        }
+        .wa-gerenciar-etiquetas-btn:hover {
+          background-color: var(--background-default-hover, rgba(134, 150, 160, 0.15));
+          color: var(--primary-strong, var(--primary, #e9edef));
+        }
+        .wa-gerenciar-etiquetas-btn.delete:hover {
+          color: #ea0038;
+          background-color: rgba(234, 0, 56, 0.1);
+        }
+        .wa-gerenciar-edit-nome-input {
+          flex: 1;
+          font-size: 13px;
+          padding: 4px 6px;
+          border: none;
+          border-bottom: 2px solid var(--border-default, rgba(134,150,160,0.25));
+          background: transparent;
+          color: var(--primary);
+          outline: none;
+          transition: border-color 0.2s;
+        }
+        .wa-gerenciar-edit-nome-input:focus {
+          border-bottom-color: var(--WDS-persistent-always-branded, var(--input-border-active, #00a884)) !important;
+        }
     `;
   document.head.appendChild(style);
 }
+
+let waTooltipTimeout = null;
+
+function inicializarTooltipDelegation() {
+  document.addEventListener("mouseover", (e) => {
+    const msgEl = e.target.closest(".sa-item-msg");
+    const customTooltipEl = e.target.closest("[data-wa-tooltip]");
+
+    if (!msgEl && !customTooltipEl) return;
+
+    let tooltipText = "";
+    let targetEl = null;
+    let isCustomButton = false;
+
+    if (customTooltipEl) {
+      tooltipText = customTooltipEl.getAttribute("data-wa-tooltip");
+      targetEl = customTooltipEl;
+      isCustomButton = true;
+    } else if (msgEl) {
+      tooltipText = msgEl.textContent || msgEl.innerText;
+      targetEl = msgEl;
+    }
+
+    if (!tooltipText) return;
+
+    clearTimeout(waTooltipTimeout);
+
+    waTooltipTimeout = setTimeout(
+      () => {
+        let tooltip = document.getElementById("wa-custom-tooltip");
+        if (!tooltip) {
+          tooltip = document.createElement("div");
+          tooltip.id = "wa-custom-tooltip";
+          document.body.appendChild(tooltip);
+        }
+
+        tooltip.textContent = tooltipText;
+
+        const rect = targetEl.getBoundingClientRect();
+
+        // Abre temporariamente o tooltip fora da tela para capturar as dimensões corretas
+        tooltip.style.left = "-9999px";
+        tooltip.style.top = "-9999px";
+
+        if (isCustomButton) {
+          tooltip.classList.add("wa-tooltip-instantaneo");
+        } else {
+          tooltip.classList.remove("wa-tooltip-instantaneo");
+        }
+
+        tooltip.classList.add("visivel");
+
+        const tooltipHeight = tooltip.offsetHeight;
+        const tooltipWidth = tooltip.offsetWidth;
+
+        const position = targetEl.getAttribute("data-wa-tooltip-position");
+        let top, left;
+
+        if (position === "right") {
+          top = rect.top + (rect.height - tooltipHeight) / 2;
+          left = rect.right + 8;
+          if (top < 10) top = 10;
+          if (top + tooltipHeight > window.innerHeight - 10) {
+            top = window.innerHeight - tooltipHeight - 10;
+          }
+        } else {
+          top = rect.top - tooltipHeight - 6; // Posicionamento padrão (acima)
+
+          if (isCustomButton) {
+            top = rect.bottom + 6; // Para botões geralmente fica abaixo
+            if (top + tooltipHeight > window.innerHeight - 10) {
+              top = rect.top - tooltipHeight - 6;
+            }
+          } else {
+            if (top < 10) {
+              top = rect.bottom + 6;
+            }
+          }
+
+          left = rect.left + (rect.width - tooltipWidth) / 2;
+          if (left < 10) left = 10;
+          if (left + tooltipWidth > window.innerWidth - 10) {
+            left = window.innerWidth - tooltipWidth - 10;
+          }
+        }
+
+        tooltip.style.top = `${top}px`;
+        tooltip.style.left = `${left}px`;
+      },
+      isCustomButton ? 350 : 250,
+    );
+  });
+
+  document.addEventListener("mouseout", (e) => {
+    const msgEl = e.target.closest(".sa-item-msg");
+    const customTooltipEl = e.target.closest("[data-wa-tooltip]");
+    if (!msgEl && !customTooltipEl) return;
+
+    clearTimeout(waTooltipTimeout);
+    const tooltip = document.getElementById("wa-custom-tooltip");
+    if (tooltip) {
+      tooltip.classList.remove("visivel");
+    }
+  });
+
+  // Oculta ao rolar qualquer painel
+  document.addEventListener(
+    "scroll",
+    () => {
+      clearTimeout(waTooltipTimeout);
+      const tooltip = document.getElementById("wa-custom-tooltip");
+      if (tooltip) {
+        tooltip.classList.remove("visivel");
+      }
+    },
+    { capture: true, passive: true },
+  );
+}
+
+function atualizarListaEtiquetasExistentes() {
+  chrome.storage.local.get(
+    { mensagensPendentes: [], historicoMensagens: [] },
+    (res) => {
+      const pendentes = res.mensagensPendentes || [];
+      const historico = res.historicoMensagens || [];
+
+      // Mapear etiqueta -> cor
+      const mapaEtiquetas = new Map();
+
+      pendentes.forEach((item) => {
+        if (item.etiqueta) {
+          mapaEtiquetas.set(item.etiqueta, item.etiquetaCor || "#00a884");
+        }
+      });
+      historico.forEach((item) => {
+        if (item.etiqueta) {
+          mapaEtiquetas.set(item.etiqueta, item.etiquetaCor || "#00a884");
+        }
+      });
+
+      const container = document.getElementById(
+        "wa-modal-etiquetas-existentes",
+      );
+      if (!container) return;
+
+      const btnNova = document.getElementById("wa-modal-btn-nova-etiqueta");
+
+      // Remove todas as pílulas existentes
+      container
+        .querySelectorAll(".wa-modal-etiqueta-pill-click")
+        .forEach((p) => p.remove());
+
+      mapaEtiquetas.forEach((cor, nome) => {
+        const pill = document.createElement("span");
+        pill.className = "wa-item-etiqueta-badge wa-modal-etiqueta-pill-click";
+        pill.innerHTML = `<svg viewBox="0 0 24 24" fill="none" style="color: ${cor}; width: 14px; height: 14px;"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M15.393 5C16.314 5 17.167 5.447 17.685 6.182L21.812 12L21.346 12.657L17.686 17.816C17.166 18.553 16.314 19 15.393 19L5.81 18.992C4.262 18.992 3 17.738 3 16.19V7.81C3 6.261 4.262 5.008 5.809 5.008L15.393 5Z"></path></svg> <strong>${nome}</strong>`;
+        pill.style.cursor = "pointer";
+        pill.style.padding = "4px 10px";
+        pill.style.borderRadius = "20px";
+        pill.style.fontSize = "11px";
+        pill.style.marginLeft = "0";
+
+        pill.addEventListener("click", () => {
+          container
+            .querySelectorAll(".wa-modal-etiqueta-pill-click")
+            .forEach((p) => {
+              p.classList.remove("selecionada");
+              p.style.outline = "none";
+            });
+
+          const criador = document.getElementById("wa-modal-criador-etiqueta");
+          if (criador) criador.style.display = "none";
+
+          pill.classList.add("selecionada");
+          pill.style.outline = `2px solid ${cor}`;
+          pill.style.outlineOffset = "1.5px";
+
+          document.getElementById("wa-modal-etiqueta-valor").value = nome;
+          document.getElementById("wa-modal-etiqueta-cor-valor").value = cor;
+        });
+
+        container.insertBefore(pill, btnNova);
+      });
+    },
+  );
+}
+
+function inicializarEventosEtiquetasModal() {
+  const btnNova = document.getElementById("wa-modal-btn-nova-etiqueta");
+  const criador = document.getElementById("wa-modal-criador-etiqueta");
+  const inputEscrita = document.getElementById(
+    "wa-modal-etiqueta-input-escrita",
+  );
+  const picker = document.getElementById("wa-modal-etiqueta-cor-picker");
+  const preview = document.getElementById("wa-modal-etiqueta-preview");
+  const trigger = document.getElementById("wa-modal-etiqueta-cor-trigger");
+
+  if (!btnNova || !criador || !inputEscrita || !picker || !preview || !trigger)
+    return;
+
+  btnNova.addEventListener("click", () => {
+    document.querySelectorAll(".wa-modal-etiqueta-pill-click").forEach((p) => {
+      p.classList.remove("selecionada");
+      p.style.outline = "none";
+    });
+
+    document.getElementById("wa-modal-etiqueta-valor").value = "";
+    document.getElementById("wa-modal-etiqueta-cor-valor").value = "";
+
+    criador.style.display = "flex";
+
+    inputEscrita.value = "";
+    picker.value = "#00a884";
+    if (preview) {
+      preview.textContent = "Nova";
+      preview.style.color = "#00a884";
+      preview.style.backgroundColor = "#00a8841f";
+      preview.style.borderColor = "#00a88440";
+    }
+    if (trigger) {
+      trigger.style.backgroundColor = "rgba(0, 168, 132, 0.2)";
+      const iconSpan = trigger.querySelector('[data-testid="label-filled"]');
+      if (iconSpan) iconSpan.style.color = "#00a884";
+    }
+
+    inputEscrita.focus();
+  });
+
+  function atualizarPreview() {
+    const nome = inputEscrita.value.trim() || "Nova";
+    const cor = picker.value;
+
+    if (preview) {
+      preview.textContent = nome;
+      preview.style.color = cor;
+      preview.style.backgroundColor = cor + "1f";
+      preview.style.borderColor = cor + "40";
+    }
+
+    if (trigger) {
+      trigger.style.backgroundColor = cor + "33"; // 20% opacidade
+      const iconSpan = trigger.querySelector('[data-testid="label-filled"]');
+      if (iconSpan) {
+        iconSpan.style.color = cor;
+      }
+    }
+
+    document.getElementById("wa-modal-etiqueta-valor").value =
+      inputEscrita.value.trim();
+    document.getElementById("wa-modal-etiqueta-cor-valor").value = cor;
+  }
+
+  inputEscrita.addEventListener("input", atualizarPreview);
+  picker.addEventListener("input", atualizarPreview);
+}
+
+function atualizarEstiloBotaoFiltro(btnFiltro) {
+  if (!btnFiltro) btnFiltro = document.getElementById("wa-btn-filtro");
+  if (!btnFiltro) return;
+
+  const svg = btnFiltro.querySelector("svg");
+  if (filtroAtivo) {
+    svg.style.color = "var(--WDS-content-action-default, #00a884)";
+    btnFiltro.classList.add("ativo");
+  } else {
+    svg.style.color = "var(--icon, #8696a0)";
+    btnFiltro.classList.remove("ativo");
+  }
+}
+
+function abrirPopoverFiltro(btnFiltro) {
+  let popover = document.getElementById("wa-filtro-popover");
+  if (popover) {
+    popover.remove();
+    return;
+  }
+
+  popover = document.createElement("div");
+  popover.id = "wa-filtro-popover";
+
+  chrome.storage.local.get(
+    { mensagensPendentes: [], historicoMensagens: [] },
+    (res) => {
+      const pendentes = res.mensagensPendentes || [];
+      const historico = res.historicoMensagens || [];
+
+      const etiquetas = new Set();
+      const agendadores = new Set();
+      const mapaEtiquetas = new Map();
+
+      pendentes.forEach((item) => {
+        if (item.etiqueta) {
+          etiquetas.add(item.etiqueta);
+          mapaEtiquetas.set(item.etiqueta, item.etiquetaCor || "#00a884");
+        }
+        if (item.agendador) agendadores.add(item.agendador);
+      });
+      historico.forEach((item) => {
+        if (item.etiqueta) {
+          etiquetas.add(item.etiqueta);
+          mapaEtiquetas.set(item.etiqueta, item.etiquetaCor || "#00a884");
+        }
+        if (item.agendador) agendadores.add(item.agendador);
+      });
+
+      const etiquetasHtml = Array.from(etiquetas)
+        .map((et) => {
+          const cor = mapaEtiquetas.get(et) || "#00a884";
+          return `<div class="wa-filtro-opcao" data-tipo="etiqueta" data-valor="${et}" style="display: flex; align-items: center; gap: 8px;">
+            <svg viewBox="0 0 24 24" fill="none" style="color: ${cor}; width: 14px; height: 14px; flex-shrink: 0;"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M15.393 5C16.314 5 17.167 5.447 17.685 6.182L21.812 12L21.346 12.657L17.686 17.816C17.166 18.553 16.314 19 15.393 19L5.81 18.992C4.262 18.992 3 17.738 3 16.19V7.81C3 6.261 4.262 5.008 5.809 5.008L15.393 5Z"></path></svg>
+            <span>${et}</span>
+          </div>`;
+        })
+        .join("");
+
+      const agendadoresHtml = Array.from(agendadores)
+        .map(
+          (ag) =>
+            `<div class="wa-filtro-opcao" data-tipo="agendador" data-valor="${ag}">${ag}</div>`,
+        )
+        .join("");
+
+      popover.innerHTML = `
+      <div class="wa-filtro-popover-header">
+        <span>Filtros</span>
+        <button class="wa-filtro-limpar-btn" id="wa-filtro-limpar-btn">Limpar</button>
+      </div>
+      <div class="wa-filtro-secao">
+        <div class="wa-filtro-secao-titulo">Etiquetas</div>
+        <div class="wa-filtro-opcoes-list">
+          ${etiquetasHtml || '<div class="wa-filtro-vazio">Nenhuma etiqueta</div>'}
+        </div>
+      </div>
+      <div class="wa-filtro-secao">
+        <div class="wa-filtro-secao-titulo">Agendado por</div>
+        <div class="wa-filtro-opcoes-list">
+          ${agendadoresHtml || '<div class="wa-filtro-vazio">Nenhum agendador</div>'}
+        </div>
+      </div>
+    `;
+
+      document.body.appendChild(popover);
+
+      const rect = btnFiltro.getBoundingClientRect();
+      popover.style.top = `${rect.bottom + 8}px`;
+      popover.style.left = `${rect.right - popover.offsetWidth}px`;
+
+      setTimeout(() => popover.classList.add("visivel"), 10);
+
+      popover.querySelectorAll(".wa-filtro-opcao").forEach((opcao) => {
+        const tipo = opcao.getAttribute("data-tipo");
+        const valor = opcao.getAttribute("data-valor");
+
+        if (
+          filtroAtivo &&
+          filtroAtivo.tipo === tipo &&
+          filtroAtivo.valor === valor
+        ) {
+          opcao.classList.add("selecionado");
+        }
+
+        opcao.addEventListener("click", () => {
+          if (
+            filtroAtivo &&
+            filtroAtivo.tipo === tipo &&
+            filtroAtivo.valor === valor
+          ) {
+            filtroAtivo = null;
+          } else {
+            filtroAtivo = { tipo, valor };
+          }
+          popover.remove();
+          renderizarLista();
+          renderizarHistorico();
+          atualizarEstiloBotaoFiltro(btnFiltro);
+        });
+      });
+
+      document
+        .getElementById("wa-filtro-limpar-btn")
+        .addEventListener("click", () => {
+          filtroAtivo = null;
+          popover.remove();
+          renderizarLista();
+          renderizarHistorico();
+          atualizarEstiloBotaoFiltro(btnFiltro);
+        });
+    },
+  );
+}
+
+function abrirPopoverGerenciarEtiquetas(btnGerenciar) {
+  let popover = document.getElementById("wa-gerenciar-etiquetas-popover");
+  if (popover) {
+    popover.remove();
+    return;
+  }
+
+  // Fechar o popover de filtro se estiver aberto
+  const popoverFiltro = document.getElementById("wa-filtro-popover");
+  if (popoverFiltro) popoverFiltro.remove();
+
+  popover = document.createElement("div");
+  popover.id = "wa-gerenciar-etiquetas-popover";
+
+  function renderizarListaGerenciamento() {
+    chrome.storage.local.get(
+      { mensagensPendentes: [], historicoMensagens: [] },
+      (res) => {
+        const pendentes = res.mensagensPendentes || [];
+        const historico = res.historicoMensagens || [];
+
+        const mapaEtiquetas = new Map();
+
+        pendentes.forEach((item) => {
+          if (item.etiqueta) {
+            mapaEtiquetas.set(item.etiqueta, item.etiquetaCor || "#00a884");
+          }
+        });
+        historico.forEach((item) => {
+          if (item.etiqueta) {
+            mapaEtiquetas.set(item.etiqueta, item.etiquetaCor || "#00a884");
+          }
+        });
+
+        if (mapaEtiquetas.size === 0) {
+          popover.innerHTML = `
+            <div class="wa-filtro-popover-header">
+              <span>Gerenciar Etiquetas</span>
+            </div>
+            <div class="wa-filtro-secao">
+              <div class="wa-filtro-vazio">Nenhuma etiqueta cadastrada</div>
+            </div>
+          `;
+          return;
+        }
+
+        const listHtml = Array.from(mapaEtiquetas.entries())
+          .map(([nome, cor]) => {
+            const nomeSafe = nome.replace(/["']/g, "");
+            return `
+              <div class="wa-gerenciar-etiquetas-opcao" data-nome="${nomeSafe}" data-cor="${cor}">
+                <div class="wa-gerenciar-etiquetas-left">
+                  <svg viewBox="0 0 24 24" fill="none" style="color: ${cor}; width: 14px; height: 14px; flex-shrink: 0;">
+                    <path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M15.393 5C16.314 5 17.167 5.447 17.685 6.182L21.812 12L21.346 12.657L17.686 17.816C17.166 18.553 16.314 19 15.393 19L5.81 18.992C4.262 18.992 3 17.738 3 16.19V7.81C3 6.261 4.262 5.008 5.809 5.008L15.393 5Z"></path>
+                  </svg>
+                  <span>${nome}</span>
+                </div>
+                <div class="wa-gerenciar-etiquetas-acoes">
+                  <button class="wa-gerenciar-etiquetas-btn edit" data-nome="${nomeSafe}" data-cor="${cor}" title="Editar">
+                    <svg viewBox="0 0 24 24" height="16" width="16" fill="currentColor"><title>pencil-refreshed</title><path d="M5 18.9999H6.4L16.2 9.22488L14.775 7.79988L5 17.5999V18.9999ZM4 20.9999C3.71667 20.9999 3.47917 20.904 3.2875 20.7124C3.09583 20.5207 3 20.2832 3 19.9999V17.5749C3 17.3082 3.05 17.054 3.15 16.8124C3.25 16.5707 3.39167 16.3582 3.575 16.1749L16.2 3.57488C16.3833 3.39154 16.6 3.24988 16.85 3.14988C17.1 3.04988 17.3583 2.99988 17.625 2.99988C17.8917 2.99988 18.1458 3.04988 18.3875 3.14988C18.6292 3.24988 18.85 3.39988 19.05 3.59988L20.425 4.99988C20.625 5.18321 20.7708 5.39571 20.8625 5.63738C20.9542 5.87904 21 6.13321 21 6.39988C21 6.64988 20.9542 6.89988 20.8625 7.14988C20.7708 7.39988 20.625 7.62488 20.425 7.82488L7.825 20.4249C7.64167 20.6082 7.42917 20.7499 7.1875 20.8499C6.94583 20.9499 6.69167 20.9999 6.425 20.9999H4Z"></path></svg>
+                  </button>
+                  <button class="wa-gerenciar-etiquetas-btn delete" data-nome="${nomeSafe}" title="Excluir">
+                    <svg viewBox="0 0 24 24" height="16" width="16" fill="currentColor"><title>delete-refreshed</title><path d="M7 21C6.45 21 5.97917 20.8042 5.5875 20.4125C5.19583 20.0208 5 19.55 5 19V6C4.44772 6 4 5.55228 4 5C4 4.44772 4.44772 4 5 4H9V3.5C9 3.22386 9.22386 3 9.5 3H14.5C14.7761 3 15 3.22386 15 3.5V4H19C19.5523 4 20 4.44772 20 5C20 5.55228 19.5523 6 19 6V19C19 19.55 18.8042 20.0208 18.4125 20.4125C18.0208 20.8042 17.55 21 17 21H7ZM17 6H7V19H17V6ZM9 16.5C9 16.7761 9.22386 17 9.5 17H10.5C10.7761 17 11 16.7761 11 16.5V8.5C11 8.22386 10.7761 8 10.5 8H9.5C9.22386 8 9 8.22386 9 8.5V16.5ZM13 16.5C13 16.7761 13.2239 17 13.5 17H14.5C14.7761 17 15 16.7761 15 16.5V8.5C15 8.22386 14.7761 8 14.5 8H13.5C13.2239 8 13 8.22386 13 8.5V16.5Z"></path></svg>
+                  </button>
+                </div>
+              </div>
+            `;
+          })
+          .join("");
+
+        popover.innerHTML = `
+          <div class="wa-filtro-popover-header">
+            <span>Gerenciar Etiquetas</span>
+          </div>
+          <div class="wa-filtro-secao" style="max-height: 250px; overflow-y: auto;">
+            ${listHtml}
+          </div>
+        `;
+
+        // Adicionar eventos aos botões
+        popover
+          .querySelectorAll(".wa-gerenciar-etiquetas-btn.edit")
+          .forEach((btn) => {
+            btn.addEventListener("click", (e) => {
+              e.stopPropagation();
+              const oldNome = btn.getAttribute("data-nome");
+              const oldCor = btn.getAttribute("data-cor");
+              const row = btn.closest(".wa-gerenciar-etiquetas-opcao");
+              if (!row) return;
+
+              // Substituir por formulário de edição inline
+              row.className = "wa-gerenciar-etiquetas-opcao-edit";
+              row.style.display = "flex";
+              row.style.alignItems = "center";
+              row.style.justifyContent = "space-between";
+              row.style.padding = "6px 14px";
+              row.style.gap = "8px";
+              row.style.backgroundColor =
+                "var(--background-default-hover, rgba(134,150,160,0.08))";
+
+              row.innerHTML = `
+              <div style="display: flex; align-items: center; gap: 12px; width: 100%; box-sizing: border-box; padding: 4px 0;">
+                <!-- Lado Esquerdo: Ícone da Etiqueta Colorido que abre o Color Picker (estilo WhatsApp) -->
+                <div style="position: relative; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                  <input type="color" class="wa-gerenciar-edit-cor-picker" value="${oldCor}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: none; padding: 0; z-index: 2;">
+                  <div class="wa-gerenciar-edit-cor-trigger" style="width: 100%; height: 100%; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 1; background-color: ${oldCor}33; color: ${oldCor}; transition: background-color 0.2s, color 0.2s;">
+                    <span style="display: flex; align-items: center; justify-content: center;">
+                      <svg viewBox="0 0 24 24" height="20" width="20" fill="none">
+                        <title>label-filled</title>
+                        <path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M15.393 5C16.314 5 17.167 5.447 17.685 6.182L21.812 12L21.346 12.657L17.686 17.816C17.166 18.553 16.314 19 15.393 19L5.81 18.992C4.262 18.992 3 17.738 3 16.19V7.81C3 6.261 4.262 5.008 5.809 5.008L15.393 5Z"></path>
+                      </svg>
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Lado Direito: Texto "Etiqueta" e Campo de Escrita com Botões -->
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0;">
+                  <span style="font-size: 11px; color: var(--secondary, #8696a0); font-weight: 500;">Etiqueta</span>
+                  <div style="display: flex; align-items: center; gap: 4px; width: 100%;">
+                    <input type="text" class="wa-gerenciar-edit-nome-input" value="${oldNome}" style="flex: 1; min-width: 0;">
+                    
+                    <button class="wa-gerenciar-edit-salvar wa-gerenciar-etiquetas-btn" style="color: var(--WDS-content-action-default, #00a884); padding: 2px;" title="Salvar">
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+                    </button>
+                    <button class="wa-gerenciar-edit-cancelar wa-gerenciar-etiquetas-btn" style="color: #ea0038; padding: 2px;" title="Cancelar">
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            `;
+
+              const inputNome = row.querySelector(
+                ".wa-gerenciar-edit-nome-input",
+              );
+              const inputCor = row.querySelector(
+                ".wa-gerenciar-edit-cor-picker",
+              );
+              const trigger = row.querySelector(
+                ".wa-gerenciar-edit-cor-trigger",
+              );
+
+              inputNome.focus();
+
+              inputCor.addEventListener("input", (evt) => {
+                const newCor = evt.target.value;
+                if (trigger) {
+                  trigger.style.backgroundColor = newCor + "33";
+                  trigger.style.color = newCor;
+                }
+              });
+
+              // Botão Cancelar
+              row
+                .querySelector(".wa-gerenciar-edit-cancelar")
+                .addEventListener("click", (evt) => {
+                  evt.stopPropagation();
+                  renderizarListaGerenciamento();
+                });
+
+              // Botão Salvar
+              row
+                .querySelector(".wa-gerenciar-edit-salvar")
+                .addEventListener("click", (evt) => {
+                  evt.stopPropagation();
+                  const newNome = inputNome.value.trim();
+                  const newCor = inputCor.value;
+
+                  if (!newNome) {
+                    alert("O nome da etiqueta não pode ser vazio!");
+                    return;
+                  }
+
+                  chrome.storage.local.get(
+                    { mensagensPendentes: [], historicoMensagens: [] },
+                    (data) => {
+                      const pList = data.mensagensPendentes || [];
+                      const hList = data.historicoMensagens || [];
+
+                      if (
+                        filtroAtivo &&
+                        filtroAtivo.tipo === "etiqueta" &&
+                        filtroAtivo.valor === oldNome
+                      ) {
+                        filtroAtivo.valor = newNome;
+                      }
+
+                      pList.forEach((item) => {
+                        if (item.etiqueta === oldNome) {
+                          item.etiqueta = newNome;
+                          item.etiquetaCor = newCor;
+                        }
+                      });
+
+                      hList.forEach((item) => {
+                        if (item.etiqueta === oldNome) {
+                          item.etiqueta = newNome;
+                          item.etiquetaCor = newCor;
+                        }
+                      });
+
+                      chrome.storage.local.set(
+                        {
+                          mensagensPendentes: pList,
+                          historicoMensagens: hList,
+                        },
+                        () => {
+                          renderizarLista();
+                          atualizarListaEtiquetasExistentes();
+                          renderizarListaGerenciamento();
+                        },
+                      );
+                    },
+                  );
+                });
+            });
+          });
+
+        // Botão Deletar
+        popover
+          .querySelectorAll(".wa-gerenciar-etiquetas-btn.delete")
+          .forEach((btn) => {
+            btn.addEventListener("click", (e) => {
+              e.stopPropagation();
+              const nome = btn.getAttribute("data-nome");
+
+              if (confirm(`Deseja realmente excluir a etiqueta "${nome}"?`)) {
+                chrome.storage.local.get(
+                  { mensagensPendentes: [], historicoMensagens: [] },
+                  (data) => {
+                    const pList = data.mensagensPendentes || [];
+                    const hList = data.historicoMensagens || [];
+
+                    if (
+                      filtroAtivo &&
+                      filtroAtivo.tipo === "etiqueta" &&
+                      filtroAtivo.valor === nome
+                    ) {
+                      filtroAtivo = null;
+                      const btnFiltroEl =
+                        document.getElementById("wa-btn-filtro");
+                      if (btnFiltroEl) btnFiltroEl.classList.remove("ativo");
+                    }
+
+                    pList.forEach((item) => {
+                      if (item.etiqueta === nome) {
+                        item.etiqueta = "";
+                        item.etiquetaCor = "";
+                      }
+                    });
+
+                    hList.forEach((item) => {
+                      if (item.etiqueta === nome) {
+                        item.etiqueta = "";
+                        item.etiquetaCor = "";
+                      }
+                    });
+
+                    chrome.storage.local.set(
+                      { mensagensPendentes: pList, historicoMensagens: hList },
+                      () => {
+                        renderizarLista();
+                        atualizarListaEtiquetasExistentes();
+                        renderizarListaGerenciamento();
+                      },
+                    );
+                  },
+                );
+              }
+            });
+          });
+      },
+    );
+  }
+
+  renderizarListaGerenciamento();
+
+  document.body.appendChild(popover);
+
+  const rect = btnGerenciar.getBoundingClientRect();
+  popover.style.top = `${rect.bottom + 8}px`;
+  popover.style.left = `${rect.right - popover.offsetWidth}px`;
+
+  setTimeout(() => popover.classList.add("visivel"), 10);
+}
+
+// Fechar popover ao clicar fora
+document.addEventListener("click", (e) => {
+  const popover = document.getElementById("wa-filtro-popover");
+  const btnFiltro = document.getElementById("wa-btn-filtro");
+  if (
+    popover &&
+    !popover.contains(e.target) &&
+    e.target !== btnFiltro &&
+    !btnFiltro?.contains(e.target)
+  ) {
+    popover.remove();
+  }
+
+  const popoverGerenciar = document.getElementById(
+    "wa-gerenciar-etiquetas-popover",
+  );
+  const btnGerenciar = document.getElementById("wa-btn-gerenciar-etiquetas");
+  if (
+    popoverGerenciar &&
+    !popoverGerenciar.contains(e.target) &&
+    e.target !== btnGerenciar &&
+    !btnGerenciar?.contains(e.target)
+  ) {
+    if (
+      !e.target.closest(".wa-gerenciar-edit-cor-picker") &&
+      !e.target.closest(".wa-gerenciar-edit-nome-input")
+    ) {
+      popoverGerenciar.remove();
+    }
+  }
+});
 
 function injetarBotaoHeader(header) {
   if (!header)
@@ -279,7 +1250,8 @@ function injetarBotaoHeader(header) {
   const botoesContainer = header.querySelector("div");
   const btnAgenda = document.createElement("div");
   btnAgenda.id = "btn-agenda-wa";
-  btnAgenda.title = "Agendador de Mensagens";
+  btnAgenda.setAttribute("data-wa-tooltip", "Agendador de Mensagens");
+  btnAgenda.setAttribute("data-wa-tooltip-position", "right");
   btnAgenda.style.cssText =
     "position: relative; cursor: pointer; padding: 8px; margin-bottom: 4px; margin-right: 10px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: background 0.2s ease;";
   btnAgenda.innerHTML = `<svg viewBox="0 0 24 24" width="24" height="24"><path class="rel-fundo" d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2z"/><path class="rel-borda" d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/><path class="rel-ponteiros" d="M12.5 7H11v6l5.2 3.2l.8-1.3l-4.5-2.7V7z"/></svg><div id="wa-agenda-badge">0</div>`;
@@ -425,6 +1397,10 @@ function observarGavetaNativa() {
       ) {
         document.body.classList.add("agendador-ativo");
         injetarPainelNaGaveta(drawer);
+      } else if (!abertoPeloAgendador) {
+        const btnFiltro = drawer.querySelector("#wa-btn-filtro");
+        if (btnFiltro) btnFiltro.remove();
+        drawer.classList.remove("wa-gaveta-sequestrada");
       }
     } else if (gavetaEstavaAberta) {
       abertoPeloAgendador = false;
@@ -440,6 +1416,102 @@ function observarGavetaNativa() {
 function injetarPainelNaGaveta(drawer) {
   drawer.classList.add("wa-gaveta-sequestrada");
   mudarTituloGaveta(drawer, "Mensagens Agendadas");
+
+  // Interceptar e remover instantaneamente qualquer tooltip nativo do WhatsApp dentro da nossa gaveta
+  const tooltipObserver = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (mutation.type === "attributes") {
+        const target = mutation.target;
+        if (target && target.hasAttribute("aria-describedby")) {
+          const tooltipId = target.getAttribute("aria-describedby");
+          target.removeAttribute("aria-describedby");
+          if (tooltipId) {
+            const nativeTooltip = document.getElementById(tooltipId);
+            if (nativeTooltip) {
+              nativeTooltip.remove();
+            }
+          }
+        }
+      }
+    });
+  });
+
+  tooltipObserver.observe(drawer, {
+    attributes: true,
+    subtree: true,
+    attributeFilter: ["aria-describedby"],
+  });
+
+  // Injetar botão de filtro no Header
+  const header = drawer.querySelector("header");
+  if (header) {
+    const antigoBtn = header.querySelector("#wa-btn-filtro");
+    if (antigoBtn) antigoBtn.remove();
+
+    const btnFiltro = document.createElement("button");
+    btnFiltro.id = "wa-btn-filtro";
+    btnFiltro.setAttribute("data-wa-tooltip", "Filtrar mensagens");
+    btnFiltro.innerHTML = `
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" xmlns="http://www.w3.org/2000/svg" style="color: var(--icon, #8696a0); transition: color 0.2s;">
+        <path d="M3 8H11M15 8H21M18 11V5M6 13H15M10 18H12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    `;
+
+    const antigoBtnGerenciar = header.querySelector(
+      "#wa-btn-gerenciar-etiquetas",
+    );
+    if (antigoBtnGerenciar) antigoBtnGerenciar.remove();
+
+    const btnGerenciar = document.createElement("button");
+    btnGerenciar.id = "wa-btn-gerenciar-etiquetas";
+    btnGerenciar.setAttribute("data-wa-tooltip", "Gerenciar etiquetas");
+    btnGerenciar.innerHTML = `
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" xmlns="http://www.w3.org/2000/svg" style="color: var(--icon, #8696a0); transition: color 0.2s;">
+        <g transform="translate(13 2) scale(0.5)">
+          <path d="M13.2942 7.95881C13.5533 7.63559 13.5013 7.16358 13.178 6.90453C12.8548 6.64549 12.3828 6.6975 12.1238 7.02072L13.2942 7.95881ZM6.811 14.8488L7.37903 15.3385C7.38489 15.3317 7.39062 15.3248 7.39623 15.3178L6.811 14.8488ZM6.64 15.2668L5.89146 15.2179L5.8908 15.2321L6.64 15.2668ZM6.5 18.2898L5.7508 18.2551C5.74908 18.2923 5.75013 18.3296 5.75396 18.3667L6.5 18.2898ZM7.287 18.9768L7.31152 19.7264C7.36154 19.7247 7.41126 19.7181 7.45996 19.7065L7.287 18.9768ZM10.287 18.2658L10.46 18.9956L10.4716 18.9927L10.287 18.2658ZM10.672 18.0218L11.2506 18.4991L11.2571 18.491L10.672 18.0218ZM17.2971 10.959C17.5562 10.6358 17.5043 10.1638 17.1812 9.90466C16.8581 9.64552 16.386 9.69742 16.1269 10.0206L17.2971 10.959ZM12.1269 7.02052C11.8678 7.34365 11.9196 7.81568 12.2428 8.07484C12.5659 8.33399 13.0379 8.28213 13.2971 7.95901L12.1269 7.02052ZM14.3 5.50976L14.8851 5.97901C14.8949 5.96672 14.9044 5.95412 14.9135 5.94123L14.3 5.50976ZM15.929 5.18976L16.4088 4.61332C16.3849 4.59344 16.3598 4.57507 16.3337 4.5583L15.929 5.18976ZM18.166 7.05176L18.6968 6.52192C18.6805 6.50561 18.6635 6.49007 18.6458 6.47532L18.166 7.05176ZM18.5029 7.87264L19.2529 7.87676V7.87676L18.5029 7.87264ZM18.157 8.68976L17.632 8.15412C17.6108 8.17496 17.5908 8.19704 17.5721 8.22025L18.157 8.68976ZM16.1271 10.0203C15.8678 10.3433 15.9195 10.8153 16.2425 11.0746C16.5655 11.3339 17.0376 11.2823 17.2969 10.9593L16.1271 10.0203ZM13.4537 7.37862C13.3923 6.96898 13.0105 6.68666 12.6009 6.74805C12.1912 6.80943 11.9089 7.19127 11.9703 7.60091L13.4537 7.37862ZM16.813 11.2329C17.2234 11.1772 17.5109 10.7992 17.4552 10.3888C17.3994 9.97834 17.0215 9.69082 16.611 9.74659L16.813 11.2329ZM12.1238 7.02072L6.22577 14.3797L7.39623 15.3178L13.2942 7.95881L12.1238 7.02072ZM6.24297 14.359C6.03561 14.5995 5.91226 14.9011 5.89159 15.218L7.38841 15.3156C7.38786 15.324 7.38457 15.3321 7.37903 15.3385L6.24297 14.359ZM5.8908 15.2321L5.7508 18.2551L7.2492 18.3245L7.3892 15.3015L5.8908 15.2321ZM5.75396 18.3667C5.83563 19.1586 6.51588 19.7524C7.31152 19.7264L7.26248 18.2272c-0.0032 0.0001-0.0048-0.0004-0.0058-0.0008-0.0014-0.0005-0.0033-0.0015-0.0052-0.0032C7.2495 18.2215 7.24825 18.2198 7.24754 18.2185C7.24703 18.2175 7.24637 18.216 7.24604 18.2128L5.75396 18.3667ZM7.45996 19.7065L10.46 18.9955L10.114 17.536L7.11404 18.247L7.45996 19.7065ZM10.4716 18.9927C10.7771 18.9151 11.05 18.7422 11.2506 18.499L10.0934 17.5445C10.0958 17.5417 10.0989 17.5397 10.1024 17.5388L10.4716 18.9927ZM11.2571 18.491L17.2971 10.959L16.1269 10.0206L10.0869 17.5526L11.2571 18.491ZM13.2971 7.95901L14.8851 5.97901L13.7149 5.04052L12.1269 7.02052L13.2971 7.95901ZM14.9135 5.94123C15.0521 5.74411 15.3214 5.6912 15.5243 5.82123L16.3337 4.5583C15.4544 3.99484 14.2873 4.2241 13.6865 5.0783L14.9135 5.94123ZM15.4492 5.7662L17.6862 7.6282L18.6458 6.47532L16.4088 4.61332L15.4492 5.7662ZM17.6352 7.58161C17.7111 7.6577 17.7535 7.761 17.7529 7.86852L19.2529 7.87676C19.2557 7.36905 19.0555 6.88127 18.6968 6.52192L17.6352 7.58161ZM17.7529 7.86852C17.7524 7.97604 17.7088 8.07886 17.632 8.15412L18.682 9.22541C19.0446 8.87002 19.2501 8.38447 19.2529 7.87676L17.7529 7.86852ZM17.5721 8.22025L16.1271 10.0203L17.2969 10.9593L18.7419 9.15928L17.5721 8.22025ZM11.9703 7.60091C12.3196 9.93221 14.4771 11.5503 16.813 11.2329L16.611 9.74659C15.0881 9.95352 13.6815 8.89855 13.4537 7.37862L11.9703 7.60091Z" fill="currentColor"/>
+        </g>
+        <path d="M17.63 5.84C17.27 5.33 16.67 5 16 5L5 5.01C3.9 5.01 3 5.9 3 7V17C3 18.1 3.9 18.99 5 18.99L16 19C16.67 19 17.27 18.67 17.63 18.16L22 12L18.2 6.6ZM16 17H5V7H16L19.55 12L16 17Z" fill="currentColor"/>
+      </svg>
+    `;
+
+    let containerBotoes = null;
+    const telBtn =
+      header.querySelector('button[aria-label="Número de telefone"]') ||
+      header.querySelector('button:has(path[d^="M12 23"])') ||
+      header.querySelector('span:has(button[aria-label="Número de telefone"])');
+    if (telBtn) {
+      containerBotoes = telBtn.closest("div");
+
+      // Remover tooltips nativos do WhatsApp do contêiner e do botão original
+      telBtn.removeAttribute("aria-label");
+      telBtn.removeAttribute("title");
+      telBtn.removeAttribute("data-tooltip");
+      const parentSpan = telBtn.closest("span");
+      if (parentSpan) {
+        parentSpan.removeAttribute("aria-label");
+        parentSpan.removeAttribute("title");
+        parentSpan.removeAttribute("data-tooltip");
+      }
+    }
+    if (!containerBotoes) {
+      containerBotoes = header.querySelector("div:last-child") || header;
+    }
+
+    containerBotoes.appendChild(btnFiltro);
+    containerBotoes.appendChild(btnGerenciar);
+    atualizarEstiloBotaoFiltro(btnFiltro);
+
+    btnFiltro.addEventListener("click", (e) => {
+      e.stopPropagation();
+      abrirPopoverFiltro(btnFiltro);
+    });
+
+    btnGerenciar.addEventListener("click", (e) => {
+      e.stopPropagation();
+      abrirPopoverGerenciarEtiquetas(btnGerenciar);
+    });
+  }
+
   const painel = document.createElement("div");
   painel.id = "wa-painel-injetado";
   painel.innerHTML = `
@@ -468,6 +1540,8 @@ function injetarPainelNaGaveta(drawer) {
   if (pularPainelEIrDiretoParaBusca) {
     painel.style.display = "none";
     drawer.classList.remove("wa-gaveta-sequestrada");
+    const btnFiltro = drawer.querySelector("#wa-btn-filtro");
+    if (btnFiltro) btnFiltro.style.setProperty("display", "none", "important");
     mudarTituloGaveta(drawer, "Agendar nova mensagem");
     modoAgendamento = true;
     pularPainelEIrDiretoParaBusca = false;
@@ -485,6 +1559,9 @@ function injetarPainelNaGaveta(drawer) {
     .addEventListener("click", () => {
       painel.style.display = "none";
       drawer.classList.remove("wa-gaveta-sequestrada");
+      const btnFiltro = drawer.querySelector("#wa-btn-filtro");
+      if (btnFiltro)
+        btnFiltro.style.setProperty("display", "none", "important");
       mudarTituloGaveta(drawer, "Agendar nova mensagem");
       modoAgendamento = true;
 
@@ -505,19 +1582,145 @@ function mudarTituloGaveta(drawer, novoTexto) {
   }
 }
 
+function abrirConversaEInfoContato(nomeContato) {
+  if (!nomeContato) return;
+
+  // PASSO 1: Fechar a gaveta do Histórico se aberta
+  const dr = document.getElementById("wa-historico-drawer");
+  if (dr) dr.classList.remove("aberto");
+
+  // Fechar o painel lateral sequestrado clicando no botão Voltar nativo
+  const btnVoltar =
+    document
+      .querySelector('span[data-icon="back-refreshed"]')
+      ?.closest("button") ||
+    document.querySelector('span[data-icon="back"]')?.closest("button") ||
+    document.querySelector('span[data-icon="x-viewer"]')?.closest("button") ||
+    document.querySelector('button[aria-label="Fechar"]');
+  if (btnVoltar) btnVoltar.click();
+
+  // PASSO 2: Aguardar o fechamento visual da gaveta lateral (400ms)
+  setTimeout(() => {
+    const searchInput =
+      document.querySelector(
+        'input[placeholder="Pesquisar ou começar uma nova conversa"]',
+      ) ||
+      document.querySelector(
+        'input[aria-label="Pesquisar ou começar uma nova conversa"]',
+      ) ||
+      document.getElementById("_r_a_") ||
+      document.querySelector('input[role="textbox"]');
+
+    if (searchInput) {
+      searchInput.focus();
+      searchInput.select();
+
+      // Inserir o nome do contato e disparar o evento input
+      searchInput.value = nomeContato;
+      searchInput.dispatchEvent(new Event("input", { bubbles: true }));
+
+      // PASSO 3: Aguardar 1000ms para carregar os resultados da busca
+      setTimeout(() => {
+        const rows = document.querySelectorAll(
+          '[data-testid="chat-list"] [role="row"], #pane-side [role="row"], [data-testid="cell-frame-container"]',
+        );
+
+        let targetResult = null;
+        for (const row of rows) {
+          if (row.querySelector('[data-testid="section-header"]')) {
+            continue;
+          }
+
+          const titleEl =
+            row.querySelector('[data-testid="cell-frame-title"] span[title]') ||
+            row.querySelector('[data-testid="cell-frame-title"] span') ||
+            row.querySelector('[data-testid="cell-frame-title"]') ||
+            row.querySelector("span[title]");
+          if (titleEl) {
+            const nameInRow =
+              titleEl.getAttribute("title") || titleEl.textContent.trim();
+
+            if (
+              nameInRow &&
+              nameInRow.toLowerCase().includes(nomeContato.toLowerCase())
+            ) {
+              targetResult = row;
+              break;
+            }
+          }
+        }
+
+        // Fallback: se não achar com exact match, pega o primeiro resultado
+        if (!targetResult && rows.length > 0) {
+          targetResult = Array.from(rows).find(
+            (row) => !row.querySelector('[data-testid="section-header"]'),
+          );
+        }
+
+        // PASSO 4: Simular o clique para abrir o chat
+        if (targetResult) {
+          const clickTarget =
+            targetResult.querySelector('[role="gridcell"]') ||
+            targetResult.querySelector('[data-testid^="chatlist-message-"]') ||
+            targetResult;
+          simularClique(clickTarget);
+
+          // PASSO 5: Aguardar a conversa abrir (1000ms) e então clicar no header para abrir os dados do contato
+          setTimeout(() => {
+            const activeHeader = document.querySelector("#main header");
+            if (activeHeader) {
+              const headerClickTarget =
+                activeHeader.querySelector('[role="button"]') ||
+                activeHeader.querySelector(
+                  '[data-testid="conversation-info-header"]',
+                ) ||
+                activeHeader.querySelector("span[title]") ||
+                activeHeader;
+              simularClique(headerClickTarget);
+            } else {
+              console.log(
+                "[WAgenda] Cabeçalho da conversa ativa não encontrado.",
+              );
+            }
+          }, 1000);
+        } else {
+          console.log(
+            "[WAgenda] Contato não encontrado nos resultados da busca.",
+          );
+        }
+      }, 1000);
+    }
+  }, 400);
+}
+
 function renderizarHistorico() {
   const container = document.getElementById("wa-historico-conteudo-lista");
   const contador = document.getElementById("wa-historico-contador");
   if (!container) return;
 
   chrome.storage.local.get({ historicoMensagens: [] }, (result) => {
-    const lista = result.historicoMensagens || [];
-    if (contador) contador.innerText = lista.length;
+    let lista = result.historicoMensagens || [];
+    if (contador)
+      contador.innerText = result.historicoMensagens
+        ? result.historicoMensagens.length
+        : 0;
+
+    // Aplicar Filtro se ativo
+    if (filtroAtivo) {
+      if (filtroAtivo.tipo === "etiqueta") {
+        lista = lista.filter((item) => item.etiqueta === filtroAtivo.valor);
+      } else if (filtroAtivo.tipo === "agendador") {
+        lista = lista.filter((item) => item.agendador === filtroAtivo.valor);
+      }
+    }
 
     if (lista.length === 0) {
+      const msgVazia = filtroAtivo
+        ? "Nenhuma mensagem corresponde ao filtro."
+        : "Nenhuma mensagem enviada ainda.";
       container.innerHTML = `
         <div style="text-align: center; color: #8696a0; font-size: 13px; margin-top: 30px; margin-bottom: 30px;">
-          Nenhuma mensagem enviada ainda.
+          ${msgVazia}
         </div>
       `;
       return;
@@ -565,9 +1768,15 @@ function renderizarHistorico() {
           ? `<img src="${item.imagem}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`
           : svgNativo();
 
-      const agendadorHtml = item.agendador
-        ? `<div style="font-size: 11px; color: var(--secondary, #8696a0); margin-top: 1px;">Agendado por: ${item.agendador}</div>`
+      const cor = item.etiquetaCor || "#00a884";
+      const etiquetaHtml = item.etiqueta
+        ? `<span class="wa-item-etiqueta-badge" title="Etiqueta"><svg viewBox="0 0 24 24" fill="none" style="color: ${cor};"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M15.393 5C16.314 5 17.167 5.447 17.685 6.182L21.812 12L21.346 12.657L17.686 17.816C17.166 18.553 16.314 19 15.393 19L5.81 18.992C4.262 18.992 3 17.738 3 16.19V7.81C3 6.261 4.262 5.008 5.809 5.008L15.393 5Z"></path></svg><strong>${item.etiqueta}</strong></span>`
         : "";
+      const agendadorHtml = item.agendador
+        ? `<div style="font-size: 11px; color: var(--secondary, #8696a0); margin-top: 1px; display: flex; align-items: center; gap: 4px;">Agendado por: ${item.agendador} ${etiquetaHtml}</div>`
+        : etiquetaHtml
+          ? `<div style="font-size: 11px; margin-top: 1px;">${etiquetaHtml}</div>`
+          : "";
 
       card.innerHTML = `
         <div class="sa-item-avatar">${imgHtml}</div>
@@ -709,10 +1918,22 @@ function renderizarLista() {
   if (!container) return;
   container.innerHTML = "";
   chrome.storage.local.get({ mensagensPendentes: [] }, (result) => {
-    const lista = result.mensagensPendentes;
+    let lista = result.mensagensPendentes || [];
+
+    // Aplicar Filtro se ativo
+    if (filtroAtivo) {
+      if (filtroAtivo.tipo === "etiqueta") {
+        lista = lista.filter((item) => item.etiqueta === filtroAtivo.valor);
+      } else if (filtroAtivo.tipo === "agendador") {
+        lista = lista.filter((item) => item.agendador === filtroAtivo.valor);
+      }
+    }
+
     if (lista.length === 0) {
-      container.innerHTML =
-        '<div style="text-align: center; color: #8696a0; font-size: 13px; margin-top: 20px;">Nenhuma mensagem na fila.</div>';
+      const msgVazia = filtroAtivo
+        ? "Nenhuma mensagem corresponde ao filtro."
+        : "Nenhuma mensagem na fila.";
+      container.innerHTML = `<div style="text-align: center; color: #8696a0; font-size: 13px; margin-top: 20px;">${msgVazia}</div>`;
       return;
     }
     // ORDENAÇÃO: Ascendente (Antigo -> Novo)
@@ -734,9 +1955,15 @@ function renderizarLista() {
         item.imagem && item.imagem.trim() !== ""
           ? `<img src="${item.imagem}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`
           : svgNativo();
-      const agendadorHtml = item.agendador
-        ? `<div style="font-size: 11px; color: var(--WDS-accent-emphasized, #d9fdd3); margin-top: 1px;">Agendado por: ${item.agendador}</div>`
+      const cor = item.etiquetaCor || "#00a884";
+      const etiquetaHtml = item.etiqueta
+        ? `<span class="wa-item-etiqueta-badge" title="Etiqueta"><svg viewBox="0 0 24 24" fill="none" style="color: ${cor};"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M15.393 5C16.314 5 17.167 5.447 17.685 6.182L21.812 12L21.346 12.657L17.686 17.816C17.166 18.553 16.314 19 15.393 19L5.81 18.992C4.262 18.992 3 17.738 3 16.19V7.81C3 6.261 4.262 5.008 5.809 5.008L15.393 5Z"></path></svg><strong>${item.etiqueta}</strong></span>`
         : "";
+      const agendadorHtml = item.agendador
+        ? `<div style="font-size: 11px; color: var(--WDS-accent-emphasized, #d9fdd3); margin-top: 1px; display: flex; align-items: center; gap: 4px;">Agendado por: ${item.agendador} ${etiquetaHtml}</div>`
+        : etiquetaHtml
+          ? `<div style="font-size: 11px; margin-top: 1px;">${etiquetaHtml}</div>`
+          : "";
       const criadoEmHtml = item.criadoEm
         ? `<div style="font-size: 11px; color: var(--WDS-content-external-link, #21c063); margin-top: 1px; opacity: 0.85;">${new Date(item.criadoEm).toLocaleDateString("pt-BR")} às ${new Date(item.criadoEm).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</div>`
         : "";
@@ -758,6 +1985,9 @@ function renderizarLista() {
             });
           },
         );
+      });
+      card.addEventListener("click", () => {
+        abrirConversaEInfoContato(item.nome);
       });
       container.appendChild(card);
     });
@@ -877,7 +2107,16 @@ function abrirModalAgendamento() {
     dateInput.value = tempScheduleDate;
   }
 
+  const hiddenEtiqueta = document.getElementById("wa-modal-etiqueta-valor");
+  const hiddenCor = document.getElementById("wa-modal-etiqueta-cor-valor");
+  if (hiddenEtiqueta) hiddenEtiqueta.value = "";
+  if (hiddenCor) hiddenCor.value = "";
+
+  const criador = document.getElementById("wa-modal-criador-etiqueta");
+  if (criador) criador.style.display = "none";
+
   atualizarContatosSelecionadosModal();
+  atualizarListaEtiquetasExistentes();
 }
 
 function injetarModalEstilos() {
@@ -2380,6 +3619,26 @@ function injetarModalEstilos() {
         .wa-modal input:focus {
           border: 1px solid var(--WDS-persistent-always-branded, var(--input-border-active, #00a884));
         }
+        .wa-modal input[type="datetime-local"] {
+          position: relative;
+        }
+        .wa-modal input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+          position: absolute;
+          top: 0;
+          right: 0;
+          width: 40px;
+          height: 100%;
+          opacity: 0 !important;
+          cursor: pointer;
+          z-index: 2;
+          background: none;
+        }
+        .wa-modal-data-container:hover .wa-calendar-icon-wrapper {
+          color: var(--primary-strong, var(--primary, #d1d7db)) !important;
+        }
+        .wa-modal-data-container:focus-within .wa-calendar-icon-wrapper {
+          color: var(--primary-strong, var(--primary, #d1d7db)) !important;
+        }
         .wa-btn {
           background: var(--WDS-persistent-always-branded, var(--icon-primary, #00a884));
           color: var(--WDS-content-on-accent, var(--white, #ffffff));
@@ -2704,7 +3963,7 @@ function injetarModalEstilos() {
   overlay.id = "wa-modal-overlay";
   overlay.innerHTML = `
     <div class="wa-modal">
-      <span class="wa-close" id="wa-fechar-modal">✖</span>
+      <span class="wa-close" id="wa-fechar-modal" data-wa-tooltip="Fechar">✖</span>
       <h2>Agendar Envio</h2>
       <label>Destinatário(s):</label>
       <div id="wa-contatos-selecionados-container"></div>
@@ -2715,7 +3974,57 @@ function injetarModalEstilos() {
       <label>Agendado por:</label>
       <input type="text" id="wa-modal-agendador" placeholder="Digite seu nome">
       <label>Data e Hora:</label>
-      <input type="datetime-local" id="wa-modal-data">
+      <div class="wa-modal-data-container" style="position: relative; display: flex; align-items: center; width: 100%;">
+        <input type="datetime-local" id="wa-modal-data" style="width: 100%; padding-right: 40px; box-sizing: border-box;">
+        <span class="wa-calendar-icon-wrapper" style="position: absolute; right: 12px; pointer-events: none; display: flex; align-items: center; justify-content: center; z-index: 1; color: var(--icon, #8696a0); transition: color 0.2s;">
+          <svg width="20" height="20" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" fill="none">
+            <path fill="currentColor" d="M17.25 23.75a1.25 1.25 0 11-2.5 0 1.25 1.25 0 012.5 0z"/>
+            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 17.462a2 2 0 112 2V20.5"/>
+            <path stroke="currentColor" stroke-linejoin="round" stroke-width="2" d="M5 8a2 2 0 012-2h18a2 2 0 012 2v18a2 2 0 01-2 2H7a2 2 0 01-2-2V8z"/>
+            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h22M21 8V4M11 8V4"/>
+          </svg>
+        </span>
+      </div>
+      <label>Etiqueta (opcional):</label>
+      <div class="wa-modal-etiquetas-container" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
+        <div id="wa-modal-etiquetas-existentes" style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center;">
+          <button type="button" id="wa-modal-btn-nova-etiqueta" data-wa-tooltip="Criar Nova Etiqueta" style="background: none; border: 1px dashed var(--WDS-persistent-always-branded, #00a884); color: var(--WDS-persistent-always-branded, #00a884); padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px; outline: none; transition: background-color 0.2s;">
+            <span>+</span> Nova
+          </button>
+        </div>
+        <div id="wa-modal-criador-etiqueta" class="wa-modal-nova-etiqueta-wrapper" style="display: none; align-items: center; gap: 12px; margin-top: 8px; padding: 10px 0; box-sizing: border-box; width: 100%;">
+          <!-- Preview oculto para compatibilidade com o JS legível -->
+          <span id="wa-modal-etiqueta-preview" style="display: none !important;"></span>
+          
+          <!-- Lado Esquerdo: Ícone da Etiqueta Colorido que abre o Color Picker (estilo WhatsApp) -->
+          <div style="position: relative; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <input type="color" id="wa-modal-etiqueta-cor-picker" value="#00a884" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: none; padding: 0; z-index: 2;">
+            <label for="wa-modal-etiqueta-cor-picker" id="wa-modal-etiqueta-cor-trigger" data-wa-tooltip="Escolher Cor" style="width: 100%; height: 100%; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 1; background-color: rgba(0, 168, 132, 0.2); transition: background-color 0.2s;">
+              <span data-testid="label-filled" aria-hidden="true" data-icon="label-filled" style="color: rgb(0, 168, 132); display: flex; align-items: center; justify-content: center;">
+                <svg viewBox="0 0 24 24" height="24" width="24" preserveAspectRatio="xMidYMid meet" fill="none">
+                  <title>label-filled</title>
+                  <path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M15.393 5C16.314 5 17.167 5.447 17.685 6.182L21.812 12L21.346 12.657L17.686 17.816C17.166 18.553 16.314 19 15.393 19L5.81 18.992C4.262 18.992 3 17.738 3 16.19V7.81C3 6.261 4.262 5.008 5.809 5.008L15.393 5Z"></path>
+                </svg>
+              </span>
+            </label>
+          </div>
+          
+          <!-- Lado Direito: Texto "Etiqueta" e Input de Linha de Texto -->
+          <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+            <span style="font-size: 12px; color: var(--secondary, #8696a0); font-weight: 500;">Etiqueta</span>
+            <div style="display: flex; align-items: center; gap: 6px; width: 100%;">
+              <input type="text" id="wa-modal-etiqueta-input-escrita" placeholder="Nome da etiqueta..." style="flex: 1;">
+              <button type="button" id="wa-modal-etiqueta-btn-emoji" data-wa-tooltip="Inserir Emoji" style="background: none; border: none; padding: 4px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--icon, #8696a0); outline: none; transition: color 0.2s; flex-shrink: 0; margin-bottom: 2px;">
+                <svg viewBox="0 0 24 24" height="20" width="20" fill="currentColor">
+                  <path d="M12 22c5.522 0 10-4.477 10-10S17.522 2 12 2 2 6.477 2 12s4.478 10 10 10zm0-2a8 8 0 1 1 0-16 8 8 0 0 1 0 16zm-3.5-9c.828 0 1.5-.672 1.5-1.5S9.328 8 8.5 8 7 8.672 7 9.5s.672 1.5 1.5 1.5zm7 0c.828 0 1.5-.672 1.5-1.5S15.328 8 14.5 8s-1.5.672-1.5 1.5.672 1.5 1.5 1.5zm-3.5 6.5c2.33 0 4.31-1.4 5.08-3.36h-10.16c.77 1.96 2.75 3.36 5.08 3.36z"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <input type="hidden" id="wa-modal-etiqueta-valor" value="">
+      <input type="hidden" id="wa-modal-etiqueta-cor-valor" value="">
       
       <div id="wa-emoji-picker">
         <div class="wa-emoji-tabs">
@@ -2744,7 +4053,7 @@ function injetarModalEstilos() {
         <button type="button" class="wa-compose-btn" title="Anexar">
           <svg viewBox="0 0 24 24" height="20" width="20" fill="currentColor"><path d="M11 13H5.5C4.94772 13 4.5 12.5523 4.5 12C4.5 11.4477 4.94772 11 5.5 11H11V5.5C11 4.94772 11.4477 4.5 12 4.5C12.5523 4.5 13 4.94772 13 5.5V11H18.5C19.0523 11 19.5 11.4477 19.5 12C19.5 12.5523 19.0523 13 18.5 13H13V18.5C13 19.0523 12.5523 19.5 12 19.5C11.4477 19.5 11 19.0523 11 18.5V13Z"></path></svg>
         </button>
-        <button type="button" class="wa-compose-btn wa-btn-emoji-trigger" title="Emojis">
+        <button type="button" class="wa-compose-btn wa-btn-emoji-trigger" data-wa-tooltip="Emojis">
           <svg viewBox="0 0 24 24" height="20" width="20" fill="currentColor"><path d="M8.49893 10.2521C9.32736 10.2521 9.99893 9.5805 9.99893 8.75208C9.99893 7.92365 9.32736 7.25208 8.49893 7.25208C7.6705 7.25208 6.99893 7.92365 6.99893 8.75208C6.99893 9.5805 7.6705 10.2521 8.49893 10.2521Z"></path><path d="M17.0011 8.75208C17.0011 9.5805 16.3295 10.2521 15.5011 10.2521C14.6726 10.2521 14.0011 9.5805 14.0011 8.75208C14.0011 7.92365 14.6726 7.25208 15.5011 7.25208C16.3295 7.25208 17.0011 7.92365 17.0011 8.75208Z"></path><path fill-rule="evenodd" clip-rule="evenodd" d="M16.8221 19.9799C15.5379 21.2537 13.8087 21.9781 12 22H9.27273C5.25611 22 2 18.7439 2 14.7273V9.27273C2 5.25611 5.25611 2 9.27273 2H14.7273C18.7439 2 22 5.25611 22 9.27273V11.8141C22 13.7532 21.2256 15.612 19.8489 16.9776L16.8221 19.9799ZM14.7273 4H9.27273C6.36068 4 4 6.36068 4 9.27273V14.7273C4 17.6393 6.36068 20 9.27273 20H11.3331C11.722 19.8971 12.0081 19.5417 12.0058 19.1204L11.9935 16.8564C11.9933 16.8201 11.9935 16.784 11.9941 16.7479C11.0454 16.7473 10.159 16.514 9.33502 16.0479C8.51002 15.5812 7.84752 14.9479 7.34752 14.1479C7.24752 13.9479 7.25585 13.7479 7.37252 13.5479C7.48919 13.3479 7.66419 13.2479 7.89752 13.2479L13.5939 13.2479C14.4494 12.481 15.5811 12.016 16.8216 12.0208L19.0806 12.0296C19.5817 12.0315 19.9889 11.6259 19.9889 11.1248V9.07648H19.9964C19.8932 6.25535 17.5736 4 14.7273 4ZM14.0057 19.1095C14.0066 19.2605 13.9959 19.4089 13.9744 19.5537C14.5044 19.3124 14.9926 18.9776 15.4136 18.5599L18.4405 15.5576C18.8989 15.1029 19.2653 14.5726 19.5274 13.996C19.3793 14.0187 19.2275 14.0301 19.0729 14.0295L16.8138 14.0208C15.252 14.0147 13.985 15.2837 13.9935 16.8455L14.0057 19.1095Z"></path></svg>
         </button>
         <div class="wa-compose-input-wrapper">
@@ -2753,10 +4062,12 @@ function injetarModalEstilos() {
         <button type="button" class="wa-compose-btn" title="Mensagem de voz">
           <svg viewBox="0 0 24 24" height="20" width="20" fill="currentColor"><path d="M12 14C11.1667 14 10.4583 13.7083 9.875 13.125C9.29167 12.5417 9 11.8333 9 11V5C9 4.16667 9.29167 3.45833 9.875 2.875C10.4583 2.29167 11.1667 2 12 2C12.8333 2 13.5417 2.29167 14.125 2.875C14.7083 3.45833 15 4.16667 15 5V11C15 11.8333 14.7083 12.5417 14.125 13.125C13.5417 13.7083 12.8333 14 12 14ZM12 21C11.4477 21 11 20.5523 11 20V17.925C9.26667 17.6917 7.83333 16.9167 6.7 15.6C5.78727 14.5396 5.24207 13.3387 5.06441 11.9973C4.9919 11.4498 5.44772 11 6 11C6.55228 11 6.98782 11.4518 7.0905 11.9945C7.27271 12.9574 7.73004 13.805 8.4625 14.5375C9.4375 15.5125 10.6167 16 12 16C13.3833 16 14.5625 15.5125 15.5375 14.5375C16.27 13.805 16.7273 12.9574 16.9095 11.9945C17.0122 11.4518 17.4477 11 18 11C18.5523 11 19.0081 11.4498 18.9356 11.9973C18.7579 13.3387 18.2127 14.5396 17.3 15.6C16.1667 16.9167 14.7333 17.6917 13 17.925V20C13 20.5523 12.5523 21 12 21ZM12 12C12.2833 12 12.5208 11.9042 12.7125 11.7125C12.9042 11.5208 13 11.2833 13 11V5C13 4.71667 12.9042 4.47917 12.7125 4.2875C12.5208 4.09583 12.2833 4 12 4C11.7167 4 11.4792 4.09583 11.2875 4.2875C11.0958 4.47917 11 4.71667 11 5V11C11 11.2833 11.0958 11.5208 11.2875 11.7125C11.4792 11.9042 11.7167 12 12 12Z"></path></svg></button>
       </div>
-      <button class="wa-btn" id="wa-salvar-btn">Confirmar Agendamento</button>
+      <button class="wa-btn" id="wa-salvar-btn" data-wa-tooltip="Confirmar Agendamento">Confirmar Agendamento</button>
     </div>
   `;
   document.body.appendChild(overlay);
+
+  inicializarEventosEtiquetasModal();
 
   // Funcionalidade de Emojis Recentes
   function renderRecentEmojis() {
@@ -2815,6 +4126,9 @@ function injetarModalEstilos() {
   const emojiGrid = overlay.querySelector(".wa-emoji-grid");
   const emojiTabs = overlay.querySelectorAll(".wa-emoji-tab");
 
+  // Rastreamento de qual input deve receber o emoji inserido
+  let emojiTargetInput = modalMsg;
+
   // Navegação ao clicar nos tabs
   emojiTabs.forEach((tab) => {
     tab.addEventListener("click", (e) => {
@@ -2863,6 +4177,7 @@ function injetarModalEstilos() {
 
   emojiTrigger.addEventListener("click", (e) => {
     e.stopPropagation();
+    emojiTargetInput = modalMsg; // Direciona emoji para o campo de mensagem
     const isVisible = emojiPicker.style.display === "flex";
     emojiPicker.style.display = isVisible ? "none" : "flex";
     if (!isVisible) {
@@ -2885,18 +4200,56 @@ function injetarModalEstilos() {
     }
   });
 
-  // Clique nos emojis para inserir no textarea mantendo a posição do cursor
+  // Gatilho do Emoji para a Etiqueta
+  const labelEmojiTrigger = overlay.querySelector(
+    "#wa-modal-etiqueta-btn-emoji",
+  );
+  const labelInputEscrita = overlay.querySelector(
+    "#wa-modal-etiqueta-input-escrita",
+  );
+
+  if (labelEmojiTrigger && labelInputEscrita) {
+    labelEmojiTrigger.addEventListener("click", (e) => {
+      e.stopPropagation();
+      emojiTargetInput = labelInputEscrita; // Direciona emoji para o campo da etiqueta
+      const isVisible = emojiPicker.style.display === "flex";
+      emojiPicker.style.display = isVisible ? "none" : "flex";
+      if (!isVisible) {
+        emojiSearch.value = "";
+        const headers = emojiGrid.querySelectorAll(".wa-emoji-category-header");
+        const items = emojiGrid.querySelectorAll(".wa-emoji-item");
+        const sections = emojiGrid.querySelectorAll(
+          ".wa-emoji-category-section",
+        );
+        headers.forEach((h) => (h.style.display = "block"));
+        items.forEach((item) => (item.style.display = "block"));
+        sections.forEach((s) => (s.style.display = "block"));
+        emojiTabs.forEach((t) => t.classList.remove("active"));
+
+        const firstTab = Array.from(emojiTabs).find(
+          (t) => t.style.display !== "none",
+        );
+        if (firstTab) firstTab.classList.add("active");
+
+        emojiSearch.focus();
+        renderRecentEmojis();
+      }
+    });
+  }
+
+  // Clique nos emojis para inserir no campo ativo mantendo a posição do cursor
   emojiGrid.addEventListener("click", (e) => {
     const item = e.target.closest(".wa-emoji-item");
     if (item) {
       const emoji = item.getAttribute("data-emoji");
-      const start = modalMsg.selectionStart;
-      const end = modalMsg.selectionEnd;
-      const text = modalMsg.value;
-      modalMsg.value = text.substring(0, start) + emoji + text.substring(end);
-      modalMsg.focus();
-      modalMsg.selectionStart = modalMsg.selectionEnd = start + emoji.length;
-      modalMsg.dispatchEvent(new Event("input"));
+      const target = emojiTargetInput || modalMsg;
+      const start = target.selectionStart || 0;
+      const end = target.selectionEnd || 0;
+      const text = target.value || "";
+      target.value = text.substring(0, start) + emoji + text.substring(end);
+      target.focus();
+      target.selectionStart = target.selectionEnd = start + emoji.length;
+      target.dispatchEvent(new Event("input"));
       saveRecentEmoji(emoji);
     }
   });
@@ -2933,11 +4286,16 @@ function injetarModalEstilos() {
 
   // Fecha o picker ao clicar fora dele
   document.addEventListener("click", (e) => {
+    const labelEmojiTrigger = document.getElementById(
+      "wa-modal-etiqueta-btn-emoji",
+    );
     if (
       emojiPicker.style.display === "flex" &&
       !emojiPicker.contains(e.target) &&
       e.target !== emojiTrigger &&
-      !emojiTrigger.contains(e.target)
+      !emojiTrigger.contains(e.target) &&
+      e.target !== labelEmojiTrigger &&
+      !(labelEmojiTrigger && labelEmojiTrigger.contains(e.target))
     ) {
       emojiPicker.style.display = "none";
     }
@@ -2951,6 +4309,12 @@ function injetarModalEstilos() {
     msgInput.style.height = "auto";
     const agendadorInput = document.getElementById("wa-modal-agendador");
     if (agendadorInput) agendadorInput.value = "";
+    const hiddenEtiqueta = document.getElementById("wa-modal-etiqueta-valor");
+    const hiddenCor = document.getElementById("wa-modal-etiqueta-cor-valor");
+    if (hiddenEtiqueta) hiddenEtiqueta.value = "";
+    if (hiddenCor) hiddenCor.value = "";
+    const criador = document.getElementById("wa-modal-criador-etiqueta");
+    if (criador) criador.style.display = "none";
 
     // Reseta contatos e estados temporários
     contatosSelecionados = [];
@@ -2980,6 +4344,9 @@ function injetarModalEstilos() {
         // para revelar de forma instantânea a lista e barra de busca nativas do WhatsApp Web, sem fechar/reabrir nada.
         painel.style.display = "none";
         drawer.classList.remove("wa-gaveta-sequestrada");
+        const btnFiltro = drawer.querySelector("#wa-btn-filtro");
+        if (btnFiltro)
+          btnFiltro.style.setProperty("display", "none", "important");
         mudarTituloGaveta(drawer, "Agendar nova mensagem");
         modoAgendamento = true;
       } else {
@@ -3002,6 +4369,12 @@ function injetarModalEstilos() {
       .value.trim();
     const data = document.getElementById("wa-modal-data").value;
     const msg = document.getElementById("wa-modal-msg").value;
+    const etiqueta = document
+      .getElementById("wa-modal-etiqueta-valor")
+      .value.trim();
+    const etiquetaCor = document
+      .getElementById("wa-modal-etiqueta-cor-valor")
+      .value.trim();
     if (!agendador) {
       alert("Preencha o campo 'Agendado por:'.");
       return;
@@ -3027,6 +4400,8 @@ function injetarModalEstilos() {
         imagem: contato.imagem,
         mensagem: msg,
         tempo: scheduleTime,
+        etiqueta: etiqueta,
+        etiquetaCor: etiquetaCor,
       };
     });
 
@@ -3041,6 +4416,16 @@ function injetarModalEstilos() {
         document.getElementById("wa-modal-data").value = "";
         const agendadorInput = document.getElementById("wa-modal-agendador");
         if (agendadorInput) agendadorInput.value = "";
+        const hiddenEtiqueta = document.getElementById(
+          "wa-modal-etiqueta-valor",
+        );
+        const hiddenCor = document.getElementById(
+          "wa-modal-etiqueta-cor-valor",
+        );
+        if (hiddenEtiqueta) hiddenEtiqueta.value = "";
+        if (hiddenCor) hiddenCor.value = "";
+        const criador = document.getElementById("wa-modal-criador-etiqueta");
+        if (criador) criador.style.display = "none";
         const msgInput = document.getElementById("wa-modal-msg");
         msgInput.value = "";
         msgInput.style.height = "auto";

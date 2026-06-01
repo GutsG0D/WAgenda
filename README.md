@@ -25,6 +25,9 @@ _O WAgenda é uma extensão para o Chrome que permite agendar mensagens no Whats
 - **Scheduler Identification**: Add your name as the "scheduler" for each message, providing context for shared accounts.
 - **Automated Sending**: A "robot" mode takes over to send the message at the scheduled time, displaying an overlay to prevent user interference.
 - **Sent History Navigation**: View the history of sent messages in an elegant, well-spaced list. Click on any past message to automatically search for it in the WhatsApp Web search input and open the corresponding conversation directly!
+- **Label Tagging & Colors**: Add custom colored labels to your scheduled messages using a native-feeling color selector and keyboard composition interface.
+- **Dynamic Scheduling Filter**: A premium filter button in the header allows you to filter pending scheduled messages and past history dynamically by label.
+- **Native Label Manager Popover**: A dedicated management entry button next to the filter button opens a clean floating menu. Perform inline editing of label names and colors with dynamically reactive circular previews, "Etiqueta" descriptors, and premium checkmark/cancel SVGs that trigger immediate cascade updates on all storage data.
 - **Pending Count Badge**: A badge on the WAgenda icon shows the number of currently scheduled messages.
 
 ---
@@ -40,6 +43,9 @@ _O WAgenda é uma extensão para o Chrome que permite agendar mensagens no Whats
 - **Identificação do Agendador**: Adicione seu nome como o "agendador" de cada mensagem, fornecendo contexto para contas compartilhadas.
 - **Envio Automatizado**: Um modo "robô" assume o controle para enviar a mensagem no horário agendado, exibindo uma tela de bloqueio para evitar a interferência do usuário.
 - **Navegação do Histórico de Envios**: Visualize o histórico de mensagens enviadas em uma lista espaçada e elegante. Clique em qualquer card do histórico para que a extensão busque a mensagem na busca nativa do WhatsApp e abra a conversa do destinatário correspondente na hora!
+- **Sistema de Etiquetas Coloridas**: Associe etiquetas personalizadas aos agendamentos para categorizar e gerenciar seus envios de forma muito mais simples.
+- **Filtro Dinâmico de Envios**: Filtre na hora os cards de agendamentos pendentes ou históricos utilizando um elegante botão de filtro unificado no cabeçalho do painel.
+- **Gerenciador de Etiquetas Nativo**: Um popover dedicado que permite gerenciar todas as suas etiquetas. Edite o nome e a cor da etiqueta de forma inline com um editor reativo idêntico ao do WhatsApp (círculo com preview de cor dinâmico, rótulo "Etiqueta" cinza e botões premium em SVG), atualizando em cascata todo o seu histórico e agendamentos.
 - **Selo de Contagem de Pendentes**: Um selo (badge) no ícone do WAgenda mostra a quantidade de mensagens agendadas atualmente.
 
 ## How It Works 🇺🇸
