@@ -464,6 +464,30 @@ function injetarEstilosOcultacao() {
           opacity: 1;
           transform: translateY(0);
         }
+
+        #wa-adicionar-etiqueta-popover {
+          position: fixed;
+          background-color: var(--dropdown-background, #233138);
+          border: 1px solid var(--border-default, rgba(134,150,160,0.15));
+          border-radius: 8px;
+          box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+          width: 200px;
+          z-index: 100003;
+          overflow: hidden;
+          padding: 10px 0;
+          font-family: var(--font-family, 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif);
+          opacity: 0;
+          transform: translateY(-8px);
+          transition: opacity 0.15s ease, transform 0.15s ease;
+          pointer-events: all;
+        }
+        #wa-adicionar-etiqueta-popover.visivel {
+          opacity: 1;
+          transform: translateY(0);
+        }
+        .wa-btn-adicionar-etiqueta-card:hover {
+          color: var(--WDS-content-action-default, #00a884) !important;
+        }
         .wa-gerenciar-etiquetas-opcao {
           display: flex;
           align-items: center;
@@ -1208,6 +1232,252 @@ function abrirPopoverGerenciarEtiquetas(btnGerenciar) {
   setTimeout(() => popover.classList.add("visivel"), 10);
 }
 
+function abrirPopoverAdicionarEtiqueta(btn, targetId, type) {
+  let popover = document.getElementById("wa-adicionar-etiqueta-popover");
+  if (popover) {
+    const activeId = popover.getAttribute("data-target-id");
+    popover.remove();
+    if (activeId === String(targetId)) {
+      return;
+    }
+  }
+
+  popover = document.createElement("div");
+  popover.id = "wa-adicionar-etiqueta-popover";
+  popover.setAttribute("data-target-id", targetId);
+  popover.style.width = "220px";
+
+  chrome.storage.local.get(
+    { mensagensPendentes: [], historicoMensagens: [] },
+    (res) => {
+      const pendentes = res.mensagensPendentes || [];
+      const historico = res.historicoMensagens || [];
+
+      const mapaEtiquetas = new Map();
+      pendentes.forEach((item) => {
+        if (item.etiqueta) {
+          mapaEtiquetas.set(item.etiqueta, item.etiquetaCor || "#00a884");
+        }
+      });
+      historico.forEach((item) => {
+        if (item.etiqueta) {
+          mapaEtiquetas.set(item.etiqueta, item.etiquetaCor || "#00a884");
+        }
+      });
+
+      const criadorFormHtml = `
+        <div class="wa-popover-criador-etiqueta" style="display: none; flex-direction: column; gap: 8px; padding: 10px 14px; box-sizing: border-box; width: 100%; border-top: 1px solid var(--border-default, rgba(134,150,160,0.15));">
+          <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
+            <div style="position: relative; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+              <input type="color" class="wa-popover-etiqueta-cor-picker" value="#00a884" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: none; padding: 0; z-index: 2;">
+              <div class="wa-popover-etiqueta-cor-trigger" style="width: 100%; height: 100%; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 1; background-color: rgba(0, 168, 132, 0.2); transition: background-color 0.2s;">
+                <span style="color: rgb(0, 168, 132); display: flex; align-items: center; justify-content: center;">
+                  <svg viewBox="0 0 24 24" height="18" width="18" fill="currentColor">
+                    <path fill-rule="evenodd" clip-rule="evenodd" d="M15.393 5C16.314 5 17.167 5.447 17.685 6.182L21.812 12L21.346 12.657L17.686 17.816C17.166 18.553 16.314 19 15.393 19L5.81 18.992C4.262 18.992 3 17.738 3 16.19V7.81C3 6.261 4.262 5.008 5.809 5.008L15.393 5Z"></path>
+                  </svg>
+                </span>
+              </div>
+            </div>
+            <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+              <input type="text" class="wa-popover-etiqueta-input-escrita" placeholder="Nome..." style="width: 100%; box-sizing: border-box; background: var(--search-input-background, #202c33); color: var(--primary, #e9edef); border: 1px solid var(--border-default, rgba(134,150,160,0.15)); border-radius: 4px; padding: 4px 8px; font-size: 12px; outline: none;">
+            </div>
+          </div>
+          <div style="display: flex; justify-content: flex-end; gap: 6px; width: 100%;">
+            <button type="button" class="wa-popover-btn-cancelar" style="background: none; border: none; color: var(--secondary, #8696a0); font-size: 11px; font-weight: 600; cursor: pointer; padding: 4px 8px; outline: none;">
+              Cancelar
+            </button>
+            <button type="button" class="wa-popover-btn-salvar" style="background: var(--WDS-persistent-always-branded, #00a884); border: none; color: #fff; font-size: 11px; font-weight: 600; cursor: pointer; padding: 4px 10px; border-radius: 4px; outline: none;">
+              Salvar
+            </button>
+          </div>
+        </div>
+      `;
+
+      if (mapaEtiquetas.size === 0) {
+        popover.innerHTML = `
+          <div class="wa-filtro-popover-header" style="display: flex; justify-content: space-between; align-items: center; padding: 8px 14px; border-bottom: 1px solid var(--border-default, rgba(134,150,160,0.15));">
+            <span style="font-weight: 600;">Etiquetar Mensagem</span>
+            <button type="button" class="wa-popover-btn-nova-etiqueta" style="background: none; border: 1px dashed var(--WDS-persistent-always-branded, #00a884); color: var(--WDS-persistent-always-branded, #00a884); padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 600; cursor: pointer; outline: none;">
+              + Nova
+            </button>
+          </div>
+          <div class="wa-filtro-secao">
+            <div class="wa-filtro-vazio" style="padding: 6px 14px; font-size: 12px; line-height: 1.4;">
+              Nenhuma etiqueta cadastrada.
+            </div>
+          </div>
+          ${criadorFormHtml}
+        `;
+      } else {
+        const opcoesHtml = Array.from(mapaEtiquetas.entries())
+          .map(([nome, cor]) => {
+            return `
+              <div class="wa-filtro-opcao wa-adicionar-etiqueta-opcao" data-nome="${nome}" data-cor="${cor}">
+                <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background-color:${cor}; margin-right:8px; vertical-align:middle;"></span>
+                <span style="vertical-align:middle;">${nome}</span>
+              </div>
+            `;
+          })
+          .join("");
+
+        popover.innerHTML = `
+          <div class="wa-filtro-popover-header" style="display: flex; justify-content: space-between; align-items: center; padding: 8px 14px; border-bottom: 1px solid var(--border-default, rgba(134,150,160,0.15));">
+            <span style="font-weight: 600;">Etiquetar Mensagem</span>
+            <button type="button" class="wa-popover-btn-nova-etiqueta" style="background: none; border: 1px dashed var(--WDS-persistent-always-branded, #00a884); color: var(--WDS-persistent-always-branded, #00a884); padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 600; cursor: pointer; outline: none;">
+              + Nova
+            </button>
+          </div>
+          <div class="wa-filtro-opcoes-list" style="max-height: 180px;">
+            ${opcoesHtml}
+          </div>
+          ${criadorFormHtml}
+        `;
+      }
+
+      document.body.appendChild(popover);
+
+      const rect = btn.getBoundingClientRect();
+      popover.style.top = `${rect.bottom + 4}px`;
+
+      const leftPos = rect.left;
+      if (leftPos + 220 > window.innerWidth) {
+        popover.style.left = `${window.innerWidth - 230}px`;
+      } else {
+        popover.style.left = `${leftPos}px`;
+      }
+
+      setTimeout(() => popover.classList.add("visivel"), 10);
+
+      const btnNova = popover.querySelector(".wa-popover-btn-nova-etiqueta");
+      const listContainer =
+        popover.querySelector(".wa-filtro-opcoes-list") ||
+        popover.querySelector(".wa-filtro-secao");
+      const formContainer = popover.querySelector(
+        ".wa-popover-criador-etiqueta",
+      );
+      const btnCancelar = popover.querySelector(".wa-popover-btn-cancelar");
+      const btnSalvar = popover.querySelector(".wa-popover-btn-salvar");
+      const picker = popover.querySelector(".wa-popover-etiqueta-cor-picker");
+      const trigger = popover.querySelector(".wa-popover-etiqueta-cor-trigger");
+      const inputEscrita = popover.querySelector(
+        ".wa-popover-etiqueta-input-escrita",
+      );
+
+      btnNova.addEventListener("click", (e) => {
+        e.stopPropagation();
+        listContainer.style.display = "none";
+        formContainer.style.display = "flex";
+        btnNova.style.display = "none";
+        inputEscrita.value = "";
+        picker.value = "#00a884";
+        trigger.style.backgroundColor = "rgba(0, 168, 132, 0.2)";
+        const svg = trigger.querySelector("svg");
+        if (svg) svg.style.color = "#00a884";
+        inputEscrita.focus();
+      });
+
+      btnCancelar.addEventListener("click", (e) => {
+        e.stopPropagation();
+        formContainer.style.display = "none";
+        listContainer.style.display = "";
+        btnNova.style.display = "";
+      });
+
+      picker.addEventListener("input", () => {
+        const cor = picker.value;
+        trigger.style.backgroundColor = cor + "33"; // 20% opacity
+        const svg = trigger.querySelector("svg");
+        if (svg) svg.style.color = cor;
+      });
+
+      btnSalvar.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const nome = inputEscrita.value.trim();
+        const cor = picker.value;
+        if (!nome) {
+          inputEscrita.focus();
+          return;
+        }
+
+        chrome.storage.local.get(
+          { mensagensPendentes: [], historicoMensagens: [] },
+          (data) => {
+            const pList = data.mensagensPendentes || [];
+            const hList = data.historicoMensagens || [];
+
+            if (type === "agendado") {
+              pList.forEach((item) => {
+                if (String(item.id) === String(targetId)) {
+                  item.etiqueta = nome;
+                  item.etiquetaCor = cor;
+                }
+              });
+            } else if (type === "historico") {
+              hList.forEach((item) => {
+                if (String(item.id) === String(targetId)) {
+                  item.etiqueta = nome;
+                  item.etiquetaCor = cor;
+                }
+              });
+            }
+
+            chrome.storage.local.set(
+              { mensagensPendentes: pList, historicoMensagens: hList },
+              () => {
+                renderizarLista();
+                renderizarHistorico();
+                popover.remove();
+              },
+            );
+          },
+        );
+      });
+
+      popover
+        .querySelectorAll(".wa-adicionar-etiqueta-opcao")
+        .forEach((opcao) => {
+          opcao.addEventListener("click", () => {
+            const nome = opcao.getAttribute("data-nome");
+            const cor = opcao.getAttribute("data-cor");
+
+            chrome.storage.local.get(
+              { mensagensPendentes: [], historicoMensagens: [] },
+              (data) => {
+                const pList = data.mensagensPendentes || [];
+                const hList = data.historicoMensagens || [];
+
+                if (type === "agendado") {
+                  pList.forEach((item) => {
+                    if (String(item.id) === String(targetId)) {
+                      item.etiqueta = nome;
+                      item.etiquetaCor = cor;
+                    }
+                  });
+                } else if (type === "historico") {
+                  hList.forEach((item) => {
+                    if (String(item.id) === String(targetId)) {
+                      item.etiqueta = nome;
+                      item.etiquetaCor = cor;
+                    }
+                  });
+                }
+
+                chrome.storage.local.set(
+                  { mensagensPendentes: pList, historicoMensagens: hList },
+                  () => {
+                    renderizarLista();
+                    renderizarHistorico();
+                    popover.remove();
+                  },
+                );
+              },
+            );
+          });
+        });
+    },
+  );
+}
+
 // Fechar popover ao clicar fora
 document.addEventListener("click", (e) => {
   const popover = document.getElementById("wa-filtro-popover");
@@ -1237,6 +1507,17 @@ document.addEventListener("click", (e) => {
     ) {
       popoverGerenciar.remove();
     }
+  }
+
+  const popoverAdicionar = document.getElementById(
+    "wa-adicionar-etiqueta-popover",
+  );
+  if (
+    popoverAdicionar &&
+    !popoverAdicionar.contains(e.target) &&
+    !e.target.closest(".wa-btn-adicionar-etiqueta-card")
+  ) {
+    popoverAdicionar.remove();
   }
 });
 
@@ -1400,6 +1681,10 @@ function observarGavetaNativa() {
       } else if (!abertoPeloAgendador) {
         const btnFiltro = drawer.querySelector("#wa-btn-filtro");
         if (btnFiltro) btnFiltro.remove();
+        const btnGerenciar = drawer.querySelector(
+          "#wa-btn-gerenciar-etiquetas",
+        );
+        if (btnGerenciar) btnGerenciar.remove();
         drawer.classList.remove("wa-gaveta-sequestrada");
       }
     } else if (gavetaEstavaAberta) {
@@ -1466,11 +1751,10 @@ function injetarPainelNaGaveta(drawer) {
     btnGerenciar.id = "wa-btn-gerenciar-etiquetas";
     btnGerenciar.setAttribute("data-wa-tooltip", "Gerenciar etiquetas");
     btnGerenciar.innerHTML = `
-      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" xmlns="http://www.w3.org/2000/svg" style="color: var(--icon, #8696a0); transition: color 0.2s;">
-        <g transform="translate(13 2) scale(0.5)">
-          <path d="M13.2942 7.95881C13.5533 7.63559 13.5013 7.16358 13.178 6.90453C12.8548 6.64549 12.3828 6.6975 12.1238 7.02072L13.2942 7.95881ZM6.811 14.8488L7.37903 15.3385C7.38489 15.3317 7.39062 15.3248 7.39623 15.3178L6.811 14.8488ZM6.64 15.2668L5.89146 15.2179L5.8908 15.2321L6.64 15.2668ZM6.5 18.2898L5.7508 18.2551C5.74908 18.2923 5.75013 18.3296 5.75396 18.3667L6.5 18.2898ZM7.287 18.9768L7.31152 19.7264C7.36154 19.7247 7.41126 19.7181 7.45996 19.7065L7.287 18.9768ZM10.287 18.2658L10.46 18.9956L10.4716 18.9927L10.287 18.2658ZM10.672 18.0218L11.2506 18.4991L11.2571 18.491L10.672 18.0218ZM17.2971 10.959C17.5562 10.6358 17.5043 10.1638 17.1812 9.90466C16.8581 9.64552 16.386 9.69742 16.1269 10.0206L17.2971 10.959ZM12.1269 7.02052C11.8678 7.34365 11.9196 7.81568 12.2428 8.07484C12.5659 8.33399 13.0379 8.28213 13.2971 7.95901L12.1269 7.02052ZM14.3 5.50976L14.8851 5.97901C14.8949 5.96672 14.9044 5.95412 14.9135 5.94123L14.3 5.50976ZM15.929 5.18976L16.4088 4.61332C16.3849 4.59344 16.3598 4.57507 16.3337 4.5583L15.929 5.18976ZM18.166 7.05176L18.6968 6.52192C18.6805 6.50561 18.6635 6.49007 18.6458 6.47532L18.166 7.05176ZM18.5029 7.87264L19.2529 7.87676V7.87676L18.5029 7.87264ZM18.157 8.68976L17.632 8.15412C17.6108 8.17496 17.5908 8.19704 17.5721 8.22025L18.157 8.68976ZM16.1271 10.0203C15.8678 10.3433 15.9195 10.8153 16.2425 11.0746C16.5655 11.3339 17.0376 11.2823 17.2969 10.9593L16.1271 10.0203ZM13.4537 7.37862C13.3923 6.96898 13.0105 6.68666 12.6009 6.74805C12.1912 6.80943 11.9089 7.19127 11.9703 7.60091L13.4537 7.37862ZM16.813 11.2329C17.2234 11.1772 17.5109 10.7992 17.4552 10.3888C17.3994 9.97834 17.0215 9.69082 16.611 9.74659L16.813 11.2329ZM12.1238 7.02072L6.22577 14.3797L7.39623 15.3178L13.2942 7.95881L12.1238 7.02072ZM6.24297 14.359C6.03561 14.5995 5.91226 14.9011 5.89159 15.218L7.38841 15.3156C7.38786 15.324 7.38457 15.3321 7.37903 15.3385L6.24297 14.359ZM5.8908 15.2321L5.7508 18.2551L7.2492 18.3245L7.3892 15.3015L5.8908 15.2321ZM5.75396 18.3667C5.83563 19.1586 6.51588 19.7524C7.31152 19.7264L7.26248 18.2272c-0.0032 0.0001-0.0048-0.0004-0.0058-0.0008-0.0014-0.0005-0.0033-0.0015-0.0052-0.0032C7.2495 18.2215 7.24825 18.2198 7.24754 18.2185C7.24703 18.2175 7.24637 18.216 7.24604 18.2128L5.75396 18.3667ZM7.45996 19.7065L10.46 18.9955L10.114 17.536L7.11404 18.247L7.45996 19.7065ZM10.4716 18.9927C10.7771 18.9151 11.05 18.7422 11.2506 18.499L10.0934 17.5445C10.0958 17.5417 10.0989 17.5397 10.1024 17.5388L10.4716 18.9927ZM11.2571 18.491L17.2971 10.959L16.1269 10.0206L10.0869 17.5526L11.2571 18.491ZM13.2971 7.95901L14.8851 5.97901L13.7149 5.04052L12.1269 7.02052L13.2971 7.95901ZM14.9135 5.94123C15.0521 5.74411 15.3214 5.6912 15.5243 5.82123L16.3337 4.5583C15.4544 3.99484 14.2873 4.2241 13.6865 5.0783L14.9135 5.94123ZM15.4492 5.7662L17.6862 7.6282L18.6458 6.47532L16.4088 4.61332L15.4492 5.7662ZM17.6352 7.58161C17.7111 7.6577 17.7535 7.761 17.7529 7.86852L19.2529 7.87676C19.2557 7.36905 19.0555 6.88127 18.6968 6.52192L17.6352 7.58161ZM17.7529 7.86852C17.7524 7.97604 17.7088 8.07886 17.632 8.15412L18.682 9.22541C19.0446 8.87002 19.2501 8.38447 19.2529 7.87676L17.7529 7.86852ZM17.5721 8.22025L16.1271 10.0203L17.2969 10.9593L18.7419 9.15928L17.5721 8.22025ZM11.9703 7.60091C12.3196 9.93221 14.4771 11.5503 16.813 11.2329L16.611 9.74659C15.0881 9.95352 13.6815 8.89855 13.4537 7.37862L11.9703 7.60091Z" fill="currentColor"/>
-        </g>
-        <path d="M17.63 5.84C17.27 5.33 16.67 5 16 5L5 5.01C3.9 5.01 3 5.9 3 7V17C3 18.1 3.9 18.99 5 18.99L16 19C16.67 19 17.27 18.67 17.63 18.16L22 12L18.2 6.6ZM16 17H5V7H16L19.55 12L16 17Z" fill="currentColor"/>
+      <svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 14.25 13.71" width="20" height="20" style="color: var(--icon, #8696a0); transition: color 0.2s;">
+        <path d="M14.25,8.47l-3.28,4.62c-.27.38-.72.63-1.22.62H1.49c-.82,0-1.49-.67-1.49-1.49v-7.49c0-.82.68-1.5,1.5-1.51h3.97c.41,0,.75.34.75.75s-.34.75-.75.75H1.5v7.5h8.25l2.66-3.75-.61-.88s-.01-.02-.02-.03c0,0-.01-.02-.01-.03-.07-.1-.1-.23-.1-.36,0-.41.34-.75.75-.75.25,0,.46.12.6.3.01.01.02.02.02.03l1.21,1.72Z" fill="currentColor"/>
+        <path d="M11.78,7.56l-.02-.02h.01s.01.01.01.02Z" fill="currentColor"/>
+        <path d="M6.33,9.21l.71-.12,4.19-5.79-.84-.61-4.18,5.8.12.71h0ZM5.99,10.31c-.14.02-.27,0-.39-.09-.11-.08-.18-.2-.21-.34l-.2-1.24c-.02-.14-.02-.27.01-.4.03-.13.09-.25.16-.36L10.77.42c.08-.11.18-.2.3-.27.12-.07.25-.12.38-.14s.27-.02.4,0c.13.03.26.09.37.17l.82.6c.12.08.21.17.28.29s.11.24.13.38c.02.13.02.26,0,.39-.03.13-.08.26-.17.38l-5.38,7.46c-.08.11-.17.2-.29.27-.11.07-.24.12-.38.14l-1.24.2h0Z" fill="currentColor"/>
       </svg>
     `;
 
@@ -1769,14 +2053,22 @@ function renderizarHistorico() {
           : svgNativo();
 
       const cor = item.etiquetaCor || "#00a884";
+      const btnAdicionarHtml = `
+        <button class="wa-btn-adicionar-etiqueta-card" data-id="${item.id}" data-type="historico" data-wa-tooltip="Adicionar etiqueta" style="background: none; border: none; padding: 0; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; color: var(--icon, #8696a0); transition: color 0.2s; vertical-align: middle; margin-left: 6px;">
+          <svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 14.25 12.69" width="16" height="16">
+            <path d="M14.25,7.44l-3.28,4.62c-.27.38-.72.63-1.22.63H1.5c-.82-.01-1.5-.67-1.5-1.5V3.69c0-.82.68-1.49,1.5-1.49h2.84c.15-.01.3.03.44.12.34.23.43.7.2,1.04-.15.22-.39.33-.64.33H1.5v7.5h8.25l.99-1.4.61-.86.39-.55.53-.74.14-.2-.14-.2-.49-.69s-.03-.04-.04-.06c-.19-.25-.21-.6-.03-.87.24-.34.7-.44,1.04-.2.08.05.14.11.19.18h.01l1.3,1.84Z" fill="currentColor"/>
+            <path d="M13.17,3.5c0,.2-.08.39-.22.53s-.32.22-.53.22h-2v2c0,.2-.08.39-.22.53s-.32.22-.53.22-.39-.09-.53-.22-.22-.32-.22-.53v-2h-1.99c-.21,0-.4-.09-.53-.22s-.22-.32-.22-.53.08-.39.22-.53.32-.22.53-.22h1.99V.75c0-.21.09-.39.22-.53s.32-.22.53-.22.4.08.53.22.22.32.22.53v2h2c.21,0,.39.08.53.22s.22.32.22.53Z" fill="currentColor"/>
+          </svg>
+        </button>
+      `;
+
       const etiquetaHtml = item.etiqueta
         ? `<span class="wa-item-etiqueta-badge" title="Etiqueta"><svg viewBox="0 0 24 24" fill="none" style="color: ${cor};"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M15.393 5C16.314 5 17.167 5.447 17.685 6.182L21.812 12L21.346 12.657L17.686 17.816C17.166 18.553 16.314 19 15.393 19L5.81 18.992C4.262 18.992 3 17.738 3 16.19V7.81C3 6.261 4.262 5.008 5.809 5.008L15.393 5Z"></path></svg><strong>${item.etiqueta}</strong></span>`
-        : "";
+        : btnAdicionarHtml;
+
       const agendadorHtml = item.agendador
         ? `<div style="font-size: 11px; color: var(--secondary, #8696a0); margin-top: 1px; display: flex; align-items: center; gap: 4px;">Agendado por: ${item.agendador} ${etiquetaHtml}</div>`
-        : etiquetaHtml
-          ? `<div style="font-size: 11px; margin-top: 1px;">${etiquetaHtml}</div>`
-          : "";
+        : `<div style="font-size: 11px; margin-top: 1px; display: flex; align-items: center; gap: 4px;">${etiquetaHtml}</div>`;
 
       card.innerHTML = `
         <div class="sa-item-avatar">${imgHtml}</div>
@@ -1894,6 +2186,17 @@ function renderizarHistorico() {
         }, 400);
       });
 
+      const btnAddEtiqueta = card.querySelector(
+        ".wa-btn-adicionar-etiqueta-card",
+      );
+      if (btnAddEtiqueta) {
+        btnAddEtiqueta.addEventListener("click", (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          abrirPopoverAdicionarEtiqueta(btnAddEtiqueta, item.id, "historico");
+        });
+      }
+
       card.querySelector(".sa-item-del").addEventListener("click", (e) => {
         e.stopPropagation();
         e.preventDefault();
@@ -1956,14 +2259,23 @@ function renderizarLista() {
           ? `<img src="${item.imagem}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`
           : svgNativo();
       const cor = item.etiquetaCor || "#00a884";
+      const btnAdicionarHtml = `
+        <button class="wa-btn-adicionar-etiqueta-card" data-id="${item.id}" data-type="agendado" data-wa-tooltip="Adicionar etiqueta" style="background: none; border: none; padding: 0; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; color: var(--icon, #8696a0); transition: color 0.2s; vertical-align: middle; margin-left: 6px;">
+          <svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 14.25 12.69" width="16" height="16">
+            <path d="M14.25,7.44l-3.28,4.62c-.27.38-.72.63-1.22.63H1.5c-.82-.01-1.5-.67-1.5-1.5V3.69c0-.82.68-1.49,1.5-1.49h2.84c.15-.01.3.03.44.12.34.23.43.7.2,1.04-.15.22-.39.33-.64.33H1.5v7.5h8.25l.99-1.4.61-.86.39-.55.53-.74.14-.2-.14-.2-.49-.69s-.03-.04-.04-.06c-.19-.25-.21-.6-.03-.87.24-.34.7-.44,1.04-.2.08.05.14.11.19.18h.01l1.3,1.84Z" fill="currentColor"/>
+            <path d="M13.17,3.5c0,.2-.08.39-.22.53s-.32.22-.53.22h-2v2c0,.2-.08.39-.22.53s-.32.22-.53.22-.39-.09-.53-.22-.22-.32-.22-.53v-2h-1.99c-.21,0-.4-.09-.53-.22s-.22-.32-.22-.53.08-.39.22-.53.32-.22.53-.22h1.99V.75c0-.21.09-.39.22-.53s.32-.22.53-.22.4.08.53.22.22.32.22.53v2h2c.21,0,.39.08.53.22s.22.32.22.53Z" fill="currentColor"/>
+          </svg>
+        </button>
+      `;
+
       const etiquetaHtml = item.etiqueta
         ? `<span class="wa-item-etiqueta-badge" title="Etiqueta"><svg viewBox="0 0 24 24" fill="none" style="color: ${cor};"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M15.393 5C16.314 5 17.167 5.447 17.685 6.182L21.812 12L21.346 12.657L17.686 17.816C17.166 18.553 16.314 19 15.393 19L5.81 18.992C4.262 18.992 3 17.738 3 16.19V7.81C3 6.261 4.262 5.008 5.809 5.008L15.393 5Z"></path></svg><strong>${item.etiqueta}</strong></span>`
-        : "";
+        : btnAdicionarHtml;
+
       const agendadorHtml = item.agendador
         ? `<div style="font-size: 11px; color: var(--WDS-accent-emphasized, #d9fdd3); margin-top: 1px; display: flex; align-items: center; gap: 4px;">Agendado por: ${item.agendador} ${etiquetaHtml}</div>`
-        : etiquetaHtml
-          ? `<div style="font-size: 11px; margin-top: 1px;">${etiquetaHtml}</div>`
-          : "";
+        : `<div style="font-size: 11px; margin-top: 1px; display: flex; align-items: center; gap: 4px;">${etiquetaHtml}</div>`;
+
       const criadoEmHtml = item.criadoEm
         ? `<div style="font-size: 11px; color: var(--WDS-content-external-link, #21c063); margin-top: 1px; opacity: 0.85;">${new Date(item.criadoEm).toLocaleDateString("pt-BR")} às ${new Date(item.criadoEm).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</div>`
         : "";
@@ -1986,6 +2298,18 @@ function renderizarLista() {
           },
         );
       });
+
+      const btnAddEtiqueta = card.querySelector(
+        ".wa-btn-adicionar-etiqueta-card",
+      );
+      if (btnAddEtiqueta) {
+        btnAddEtiqueta.addEventListener("click", (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          abrirPopoverAdicionarEtiqueta(btnAddEtiqueta, item.id, "agendado");
+        });
+      }
+
       card.addEventListener("click", () => {
         abrirConversaEInfoContato(item.nome);
       });
@@ -4578,57 +4902,64 @@ function simularDigitacao(el, text) {
 }
 
 function iniciarFluxoDeEnvio(nome, msg, finalizar) {
-  const btn =
-    document.querySelector('button[aria-label="Nova conversa"]') ||
-    document
-      .querySelector('span[data-icon="new-chat-outline"]')
-      ?.closest("button");
-  if (btn) btn.click();
+  const btnConversas = document.querySelector('button[aria-label="Conversas"]');
+  if (btnConversas) {
+    simularClique(btnConversas);
+  }
+
   setTimeout(() => {
-    const search =
-      document.querySelector('input[data-tab="3"]') ||
-      document.querySelector('input[role="textbox"]');
-    if (!search) return finalizar();
-    simularDigitacao(search, nome);
+    const btn =
+      document.querySelector('button[aria-label="Nova conversa"]') ||
+      document
+        .querySelector('span[data-icon="new-chat-outline"]')
+        ?.closest("button");
+    if (btn) btn.click();
     setTimeout(() => {
-      const contato = document.querySelector(`span[title="${nome}"]`);
-      if (contato) {
-        const card =
-          contato.closest('div[data-testid="cell-frame-container"]') ||
-          contato.closest('div[role="listitem"]');
-        card.dispatchEvent(
-          new MouseEvent("click", { bubbles: true, cancelable: true }),
-        );
-        setTimeout(() => {
-          const caixa =
-            document.querySelector(
-              'div[contenteditable="true"][data-tab="10"]',
-            ) || document.querySelector('div[title="Mensagem"]');
-          if (caixa) {
-            simularDigitacao(caixa, msg);
-            setTimeout(() => {
-              const enviar =
-                document.querySelector('button[aria-label="Enviar"]') ||
-                document
-                  .querySelector('span[data-testid="wds-ic-send-filled"]')
-                  ?.closest("button") ||
-                document
-                  .querySelector('span[data-icon="send"]')
-                  ?.closest("button");
-              if (enviar) enviar.click();
-              setTimeout(finalizar, 1000);
-            }, 500);
-          } else finalizar();
-        }, 1500);
-      } else {
-        const back =
-          document.querySelector('button[aria-label="Voltar"]') ||
-          document
-            .querySelector('span[data-icon="back-refreshed"]')
-            ?.closest("button");
-        if (back) back.click();
-        finalizar();
-      }
+      const search =
+        document.querySelector('input[data-tab="3"]') ||
+        document.querySelector('input[role="textbox"]');
+      if (!search) return finalizar();
+      simularDigitacao(search, nome);
+      setTimeout(() => {
+        const contato = document.querySelector(`span[title="${nome}"]`);
+        if (contato) {
+          const card =
+            contato.closest('div[data-testid="cell-frame-container"]') ||
+            contato.closest('div[role="listitem"]');
+          card.dispatchEvent(
+            new MouseEvent("click", { bubbles: true, cancelable: true }),
+          );
+          setTimeout(() => {
+            const caixa =
+              document.querySelector(
+                'div[contenteditable="true"][data-tab="10"]',
+              ) || document.querySelector('div[title="Mensagem"]');
+            if (caixa) {
+              simularDigitacao(caixa, msg);
+              setTimeout(() => {
+                const enviar =
+                  document.querySelector('button[aria-label="Enviar"]') ||
+                  document
+                    .querySelector('span[data-testid="wds-ic-send-filled"]')
+                    ?.closest("button") ||
+                  document
+                    .querySelector('span[data-icon="send"]')
+                    ?.closest("button");
+                if (enviar) enviar.click();
+                setTimeout(finalizar, 1000);
+              }, 500);
+            } else finalizar();
+          }, 1500);
+        } else {
+          const back =
+            document.querySelector('button[aria-label="Voltar"]') ||
+            document
+              .querySelector('span[data-icon="back-refreshed"]')
+              ?.closest("button");
+          if (back) back.click();
+          finalizar();
+        }
+      }, 1500);
     }, 1500);
-  }, 500);
+  }, 400);
 }
