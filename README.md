@@ -19,6 +19,9 @@ _O WAgenda é uma extensão para o Chrome que permite agendar mensagens no Whats
 - **Integrated UI**: Adds a clock icon to the WhatsApp Web header to access all scheduling features without leaving the page.
 - **In-Page Multi-Contact Scheduling**: Schedule a single message to multiple recipients at once by selecting multiple contacts directly from your list.
 - **Visual Contact Picker inside Modal**: A beautiful contact display inside the modal showing profile pictures, names, and quick-remove `✖` buttons.
+- **Attachment Support (Images & Documents)**: Schedule messages with attachments (images, videos, or documents like PDFs up to 4MB). Features a rich preview inside the modal (miniature for images, document icon + file name for files).
+- **Advanced Upload Automation**: Simulates native clipboard paste actions using dynamic Blobs and File transfers, enters captions directly in the WhatsApp Web media description input, and monitors upload status to ensure files are fully uploaded before sending.
+- **Clean Message Tooltips**: Tooltips on message cards in the panel list are filtered using `.wa-msg-texto-puro` to display only the raw message text, hiding attachment names or badges.
 - **"+ Add Contact" Flow**: Seamless transition to select additional recipients from the WhatsApp Web drawer without losing your typed message or date.
 - **Message Management**: View, manage, and cancel all your pending scheduled messages in a dedicated panel.
 - **Rich Text Input**: An advanced message composition box with a built-in emoji picker, complete with search and recent emojis functionality.
@@ -29,6 +32,7 @@ _O WAgenda é uma extensão para o Chrome que permite agendar mensagens no Whats
 - **Dynamic Scheduling Filter**: A premium filter button in the header allows you to filter pending scheduled messages and past history dynamically by label.
 - **Native Label Manager Popover**: A dedicated management entry button next to the filter button opens a clean floating menu. Perform inline editing of label names and colors with dynamically reactive circular previews, "Etiqueta" descriptors, and premium checkmark/cancel SVGs that trigger immediate cascade updates on all storage data.
 - **Pending Count Badge**: A badge on the WAgenda icon shows the number of currently scheduled messages.
+- **Modular Architecture**: Clean, refactored codebase separated into highly optimized modules (`globals.js`, `emojis.js`, `utils.js`, `ui.js`, `scheduler.js`, `content.js`) with all custom styles centralizing inside `styles.css`.
 
 ---
 
@@ -37,6 +41,9 @@ _O WAgenda é uma extensão para o Chrome que permite agendar mensagens no Whats
 - **Interface Integrada**: Adiciona um ícone de relógio ao cabeçalho do WhatsApp Web para acessar todos os recursos de agendamento sem sair da página.
 - **Agendamento Multi-Contato**: Agende uma única mensagem para vários contatos de uma só vez selecionando múltiplos destinatários da sua lista.
 - **Seletor Visual de Contatos no Modal**: Exibição premium no modal mostrando as fotos de perfil, nomes e botões `✖` para remoção rápida de destinatários.
+- **Suporte Completo a Anexos (Imagens e Documentos)**: Agende mensagens acompanhadas de arquivos (fotos, vídeos ou documentos/PDFs de até 4MB). Inclui preview dinâmico no modal (miniatura para imagens ou ícone elegante + nome do arquivo para documentos).
+- **Automação Avançada de Envio de Mídia**: Converte e injeta anexos simulando a ação de colar (`paste`) do clipboard no WhatsApp Web, insere o texto como legenda da mídia no campo apropriado e aguarda a barra de progresso de upload sumir antes de clicar em enviar.
+- **Tooltips Limpos no Painel**: Ao passar o mouse sobre as mensagens agendadas ou enviadas, o balão exibe apenas o texto puro da mensagem (`.wa-msg-texto-puro`), ocultando metadados ou nomes de anexos.
 - **Fluxo "+ Adicionar Contato"**: Transição inteligente para selecionar novos destinatários a partir da gaveta nativa do WhatsApp sem perder o texto ou a data que você já digitou.
 - **Gerenciamento de Mensagens**: Visualize, gerencie e cancele todas as suas mensagens agendadas pendentes em um painel dedicado.
 - **Entrada de Texto Rico**: Uma caixa avançada de composição de mensagens com um seletor de emojis integrado, contendo busca e emojis recentes.
@@ -47,40 +54,38 @@ _O WAgenda é uma extensão para o Chrome que permite agendar mensagens no Whats
 - **Filtro Dinâmico de Envios**: Filtre na hora os cards de agendamentos pendentes ou históricos utilizando um elegante botão de filtro unificado no cabeçalho do painel.
 - **Gerenciador de Etiquetas Nativo**: Um popover dedicado que permite gerenciar todas as suas etiquetas. Edite o nome e a cor da etiqueta de forma inline com um editor reativo idêntico ao do WhatsApp (círculo com preview de cor dinâmico, rótulo "Etiqueta" cinza e botões premium em SVG), atualizando em cascata todo o seu histórico e agendamentos.
 - **Selo de Contagem de Pendentes**: Um selo (badge) no ícone do WAgenda mostra a quantidade de mensagens agendadas atualmente.
+- **Arquitetura Modular**: Código-fonte refatorado de um arquivo monolítico para arquivos especializados e limpos (`globals.js`, `emojis.js`, `utils.js`, `ui.js`, `scheduler.js`, `content.js`) e todos os estilos unificados em `styles.css`.
 
 ## How It Works 🇺🇸
 
-The extension operates through a combination of a content script and a background service worker:
+The extension operates through a combination of content script modules and a background service worker:
 
-1.  **UI Injection**: The `content.js` script injects a new clock button into the WhatsApp Web header.
+1.  **UI Injection**: The content script initialization inside `content.js` injects the clock button into the WhatsApp Web header.
 2.  **Scheduling**:
-    - Clicking the clock icon opens a custom panel within the "New Chat" drawer, listing all scheduled messages.
-    - When you choose to schedule a new message, you select a contact, and a modal appears.
-    - You fill in the details (date, time, message, and your name as the scheduler).
-3.  **Alarm Creation**: The message details are sent to `background.js`, which saves the data to `chrome.storage.local` and sets a precise `chrome.alarms` event.
+    - Clicking the clock icon opens a custom panel (rendered by `ui.js`) inside the "New Chat" drawer, listing all scheduled messages.
+    - Select a contact or multiple contacts, fill in the message text, attach any media/document, select your label, and choose a date and time.
+3.  **Alarm Creation**: The scheduled data is sent to `background.js`, saving it inside `chrome.storage.local` and registering a precise `chrome.alarms` trigger.
 4.  **Execution**:
-    - When the alarm triggers, the background script notifies the content script to start the sending process.
-    - The `content.js` script displays a "WAgenda Ativo" overlay to block user input and prevent errors.
-    - It then automates the steps: searching for the contact, entering the message text into the chat box, and clicking the send button.
-5.  **Cleanup**: Once the message is sent, the overlay is removed, the message is cleared from the pending list, and the badge count is updated.
+    - When the alarm triggers, `background.js` broadcasts an event, prompting the active tab (`scheduler.js`) to start the automated sending flow.
+    - A blocking screen overlay stops user interactions to prevent typos or clicks.
+    - The robot navigates chats, pastes any attachment, writes the caption/message, waits for upload completion, and fires the send action.
+5.  **Cleanup**: The overlay is removed, the scheduled message moves to history, and the pending badge count updates.
 
 ---
 
 ### Como Funciona 🇧🇷
 
-A extensão funciona através da combinação de um script de conteúdo (content script) e um service worker em segundo plano (background):
+A extensão funciona através da combinação de módulos do script de conteúdo e um background service worker:
 
-1.  **Injeção de UI**: O script `content.js` injeta um novo botão de relógio no cabeçalho do WhatsApp Web.
+1.  **Injeção de UI**: A inicialização em `content.js` injeta o ícone de relógio no cabeçalho nativo do WhatsApp Web.
 2.  **Agendamento**:
-    - Clicar no ícone de relógio abre um painel personalizado dentro do menu "Nova Conversa", listando todas as mensagens agendadas.
-    - Ao optar por agendar uma nova mensagem, você escolhe um contato e um modal é exibido.
-    - Você preenche os detalhes (data, hora, mensagem e seu nome como agendador).
-3.  **Criação do Alarme**: Os detalhes da mensagem são enviados para o `background.js`, que salva os dados no `chrome.storage.local` e define um evento preciso no `chrome.alarms`.
+    - Clicar no relógio abre o painel lateral (renderizado por `ui.js`).
+    - Escolha os contatos, escreva a mensagem, selecione anexos se desejar, associe uma etiqueta e escolha a data e a hora do agendamento.
+3.  **Criação do Alarme**: O payload de agendamento é enviado ao `background.js`, que cria uma entrada no `chrome.storage.local` e agenda o alarme via `chrome.alarms`.
 4.  **Execução**:
-    - Quando o alarme dispara, o script de background notifica o script de conteúdo para iniciar o processo de envio.
-    - O script `content.js` exibe uma sobreposição escrita "WAgenda Ativo" para bloquear a entrada de dados do usuário e evitar erros.
-    - Ele então automatiza as etapas: pesquisa o contato, insere o texto da mensagem na caixa de conversa e clica no botão de enviar.
-5.  **Limpeza**: Assim que a mensagem é enviada, a tela de sobreposição é removida, a mensagem é limpa da lista de pendentes e o contador do selo (badge) é atualizado.
+    - No horário agendado, o alarme dispara e avisa a aba ativa do WhatsApp Web. A engine do robô em `scheduler.js` assume o controle.
+    - Uma tela de bloqueio impede a interferência do usuário. O robô abre o chat do destinatário, simula a colagem de arquivos se houver, preenche a legenda/mensagem, aguarda o upload do anexo terminar e envia.
+5.  **Limpeza**: A tela de bloqueio some, a mensagem vai para o histórico de enviados e o contador do badge se atualiza.
 
 ## Installation 🇺🇸
 
