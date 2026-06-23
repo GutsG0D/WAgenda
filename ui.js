@@ -1501,6 +1501,10 @@ function injetarPainelNaGaveta(drawer) {
     drawer.classList.remove("wa-gaveta-sequestrada");
     const btnFiltro = drawer.querySelector("#wa-btn-filtro");
     if (btnFiltro) btnFiltro.style.setProperty("display", "none", "important");
+    const btnGerenciar = drawer.querySelector("#wa-btn-gerenciar-etiquetas");
+    if (btnGerenciar) btnGerenciar.style.setProperty("display", "none", "important");
+    const btnRR = drawer.querySelector("#wa-btn-respostas-rapidas");
+    if (btnRR) btnRR.style.setProperty("display", "none", "important");
     mudarTituloGaveta(drawer, "Agendar nova mensagem");
     modoAgendamento = true;
     pularPainelEIrDiretoParaBusca = false;
@@ -1521,6 +1525,12 @@ function injetarPainelNaGaveta(drawer) {
       const btnFiltro = drawer.querySelector("#wa-btn-filtro");
       if (btnFiltro)
         btnFiltro.style.setProperty("display", "none", "important");
+      const btnGerenciar = drawer.querySelector("#wa-btn-gerenciar-etiquetas");
+      if (btnGerenciar)
+        btnGerenciar.style.setProperty("display", "none", "important");
+      const btnRR = drawer.querySelector("#wa-btn-respostas-rapidas");
+      if (btnRR)
+        btnRR.style.setProperty("display", "none", "important");
       mudarTituloGaveta(drawer, "Agendar nova mensagem");
       modoAgendamento = true;
 
