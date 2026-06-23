@@ -631,7 +631,7 @@ function abrirPopoverAdicionarEtiqueta(btn, targetId, type) {
               </div>
             </div>
             <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
-              <input type="text" class="wa-popover-etiqueta-input-escrita" placeholder="Nome..." style="width: 100%; box-sizing: border-box; background: var(--search-input-background, #202c33); color: var(--primary, #e9edef); border: 1px solid var(--border-default, rgba(134,150,160,0.15)); border-radius: 4px; padding: 4px 8px; font-size: 12px; outline: none;">
+              <input type="text" class="wa-popover-etiqueta-input-escrita" placeholder="Nome..." style="width: 100%; box-sizing: border-box; background: var(--WDS-surface-highlight, #202c33); color: var(--primary, #e9edef); border: 1px solid var(--border-default, rgba(134,150,160,0.15)); border-radius: 4px; padding: 4px 8px; font-size: 12px; outline: none;">
             </div>
           </div>
           <div style="display: flex; justify-content: flex-end; gap: 6px; width: 100%;">
@@ -843,7 +843,9 @@ function renderizarGavetaRR() {
         </div>`;
       return;
     }
-    lista.innerHTML = itens.map((item) => `
+    lista.innerHTML = itens
+      .map(
+        (item) => `
       <div class="wa-rr-gaveta-item" data-id="${item.id}">
         <div class="wa-rr-gaveta-item-info">
           <div class="wa-rr-gaveta-item-atalho">/${item.atalho}</div>
@@ -853,7 +855,9 @@ function renderizarGavetaRR() {
           <button class="wa-rr-gaveta-item-btn edit" data-id="${item.id}" title="Editar">${SVG_EDIT_RR}</button>
           <button class="wa-rr-gaveta-item-btn delete" data-id="${item.id}" title="Excluir">${SVG_DELETE_RR}</button>
         </div>
-      </div>`).join("");
+      </div>`,
+      )
+      .join("");
 
     lista.querySelectorAll(".wa-rr-gaveta-item-btn.edit").forEach((btn) => {
       btn.addEventListener("click", (e) => {
@@ -871,7 +875,10 @@ function renderizarGavetaRR() {
         e.stopPropagation();
         const id = btn.getAttribute("data-id");
         carregarRespostasRapidas((itens) => {
-          salvarRespostasRapidas(itens.filter((i) => i.id !== id), () => renderizarGavetaRR());
+          salvarRespostasRapidas(
+            itens.filter((i) => i.id !== id),
+            () => renderizarGavetaRR(),
+          );
         });
       });
     });
@@ -913,8 +920,12 @@ function abrirGavetaRespostasRapidas() {
   // Anima entrada
   requestAnimationFrame(() => gaveta.classList.add("aberta"));
 
-  gaveta.querySelector("#wa-rr-gaveta-fechar").addEventListener("click", fecharGavetaRespostasRapidas);
-  gaveta.querySelector("#wa-rr-btn-nova").addEventListener("click", () => abrirModalRespostaRapida(null));
+  gaveta
+    .querySelector("#wa-rr-gaveta-fechar")
+    .addEventListener("click", fecharGavetaRespostasRapidas);
+  gaveta
+    .querySelector("#wa-rr-btn-nova")
+    .addEventListener("click", () => abrirModalRespostaRapida(null));
 }
 
 function fecharGavetaRespostasRapidas() {
@@ -923,7 +934,9 @@ function fecharGavetaRespostasRapidas() {
   const btnBolt = document.getElementById("wa-btn-respostas-rapidas");
   if (btnBolt) btnBolt.classList.remove("ativo");
   gaveta.classList.remove("aberta");
-  gaveta.addEventListener("transitionend", () => gaveta.remove(), { once: true });
+  gaveta.addEventListener("transitionend", () => gaveta.remove(), {
+    once: true,
+  });
 }
 
 function abrirModalRespostaRapida(item) {
@@ -945,7 +958,7 @@ function abrirModalRespostaRapida(item) {
           <span class="wa-rr-modal-label">Atalho</span>
           <div class="wa-rr-modal-input-container">
             <span class="wa-rr-modal-slash">/</span>
-            <input type="text" id="wa-rr-input-atalho" placeholder="atalho" maxlength="25" value="${edicao ? item.atalho.replace(/"/g, '&quot;') : ""}" autocomplete="off" spellcheck="false">
+            <input type="text" id="wa-rr-input-atalho" placeholder="atalho" maxlength="25" value="${edicao ? item.atalho.replace(/"/g, "&quot;") : ""}" autocomplete="off" spellcheck="false">
             <span class="wa-rr-modal-contador" id="wa-rr-contador-atalho">25</span>
           </div>
           <div class="wa-rr-modal-erro" id="wa-rr-erro-atalho">O atalho não pode ficar em branco.</div>
@@ -953,7 +966,7 @@ function abrirModalRespostaRapida(item) {
         <div class="wa-rr-modal-campo">
           <span class="wa-rr-modal-label">Mensagem da resposta</span>
           <div class="wa-rr-modal-input-container">
-            <textarea id="wa-rr-input-mensagem" placeholder="Digite a mensagem..." rows="1">${edicao ? item.mensagem.replace(/</g, '&lt;') : ""}</textarea>
+            <textarea id="wa-rr-input-mensagem" placeholder="Digite a mensagem..." rows="1">${edicao ? item.mensagem.replace(/</g, "&lt;") : ""}</textarea>
             <button class="wa-rr-modal-emoji-btn" id="wa-rr-modal-emoji-btn" title="Abrir o painel de emojis">
               <svg viewBox="0 0 24 24" height="24" width="24" preserveAspectRatio="xMidYMid meet" fill="none"><title>ic-mood</title><path fill="currentColor" d="M15.5 11c.42 0 .77-.15 1.06-.44.3-.29.44-.64.44-1.06 0-.42-.15-.77-.44-1.06-.29-.3-.64-.44-1.06-.44-.42 0-.77.15-1.06.44-.3.29-.44.64-.44 1.06 0 .42.15.77.44 1.06.29.3.64.44 1.06.44ZM-7 0c.42 0 .77-.15 1.06-.44.3-.29.44-.64.44-1.06 0-.42-.15-.77-.44-1.06C9.27 8.14 8.92 8 8.5 8c-.42 0-.77.15-1.06.44-.3.29-.44.64-.44 1.06 0 .42.15.77.44 1.06.29.3.64.44 1.06.44ZM12 22a10.1 10.1 0 0 1-9.21-6.1A9.74 9.74 0 0 1 2 12a10.1 10.1 0 0 1 6.1-9.21A9.74 9.74 0 0 1 12 2a10.1 10.1 0 0 1 9.21 6.1c.53 1.22.79 2.52.79 3.9s-.26 2.68-.79 3.9a10.1 10.1 0 0 1-5.31 5.31A9.74 9.74 0 0 1 12 22Zm0-2c2.23 0 4.13-.77 5.68-2.32A7.72 7.72 0 0 0 20 12c0-2.23-.77-4.13-2.32-5.67A7.72 7.72 0 0 0 12 4c-2.23 0-4.13.78-5.67 2.33A7.72 7.72 0 0 0 4 12c0 2.23.78 4.13 2.33 5.68A7.72 7.72 0 0 0 12 20Zm0-2.5a5.53 5.53 0 0 0 4.65-2.6c.1-.2.1-.4-.02-.6a.57.57 0 0 0-.53-.3H7.9c-.23 0-.4.1-.53.3a.6.6 0 0 0-.02.6A5.5 5.5 0 0 0 12 17.5Z"></path></svg>
             </button>
@@ -981,7 +994,9 @@ function abrirModalRespostaRapida(item) {
     inputMensagem.style.height = inputMensagem.scrollHeight + "px";
   }
   inputMensagem.addEventListener("input", resizeTextarea);
-  if (edicao) { setTimeout(resizeTextarea, 10); }
+  if (edicao) {
+    setTimeout(resizeTextarea, 10);
+  }
 
   let atalhoInteragido = false;
   let mensagemInteragida = false;
@@ -993,7 +1008,9 @@ function abrirModalRespostaRapida(item) {
     contadorAtalho.textContent = 25 - atalho.length;
 
     if (atalhoInteragido) {
-      const atalhoContainer = inputAtalho.closest(".wa-rr-modal-input-container");
+      const atalhoContainer = inputAtalho.closest(
+        ".wa-rr-modal-input-container",
+      );
       const errorAtalho = overlay.querySelector("#wa-rr-erro-atalho");
       if (!atalho) {
         if (atalhoContainer) atalhoContainer.classList.add("wa-erro");
@@ -1005,7 +1022,9 @@ function abrirModalRespostaRapida(item) {
     }
 
     if (mensagemInteragida) {
-      const msgContainer = inputMensagem.closest(".wa-rr-modal-input-container");
+      const msgContainer = inputMensagem.closest(
+        ".wa-rr-modal-input-container",
+      );
       const errorMsg = overlay.querySelector("#wa-rr-erro-mensagem");
       if (!msg) {
         if (msgContainer) msgContainer.classList.add("wa-erro");
@@ -1064,15 +1083,19 @@ function abrirModalRespostaRapida(item) {
           // Limpa busca anterior
           const emojiSearch = emojiPicker.querySelector(".wa-emoji-search");
           if (emojiSearch) emojiSearch.value = "";
-          
+
           emojiPicker.style.display = "flex";
           rrModal.classList.add("wa-emoji-open");
           emojiPicker._rrTarget = inputMensagem;
 
           // Reseta visualização das categorias e itens do emoji picker
-          const headers = emojiPicker.querySelectorAll(".wa-emoji-category-header");
+          const headers = emojiPicker.querySelectorAll(
+            ".wa-emoji-category-header",
+          );
           const items = emojiPicker.querySelectorAll(".wa-emoji-item");
-          const sections = emojiPicker.querySelectorAll(".wa-emoji-category-section");
+          const sections = emojiPicker.querySelectorAll(
+            ".wa-emoji-category-section",
+          );
           headers.forEach((h) => (h.style.display = "block"));
           items.forEach((item) => (item.style.display = "block"));
           sections.forEach((s) => (s.style.display = "block"));
@@ -1109,8 +1132,12 @@ function abrirModalRespostaRapida(item) {
     setTimeout(() => overlay.remove(), 200);
   }
 
-  overlay.querySelector("#wa-rr-modal-fechar").addEventListener("click", fecharModal);
-  overlay.querySelector("#wa-rr-modal-cancelar").addEventListener("click", fecharModal);
+  overlay
+    .querySelector("#wa-rr-modal-fechar")
+    .addEventListener("click", fecharModal);
+  overlay
+    .querySelector("#wa-rr-modal-cancelar")
+    .addEventListener("click", fecharModal);
 
   // Fechar clicando no backdrop
   overlay.addEventListener("click", (e) => {
@@ -1141,7 +1168,10 @@ function abrirModalRespostaRapida(item) {
 
   // Enter no campo atalho vai para mensagem
   inputAtalho.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") { e.preventDefault(); inputMensagem.focus(); }
+    if (e.key === "Enter") {
+      e.preventDefault();
+      inputMensagem.focus();
+    }
   });
 
   setTimeout(() => inputAtalho.focus(), 100);
@@ -1157,22 +1187,31 @@ function fecharPopoverRR() {
 
 function selecionarRespostaRapida(mensagem) {
   const textarea = document.getElementById("wa-modal-msg");
-  if (!textarea) { fecharPopoverRR(); return; }
+  if (!textarea) {
+    fecharPopoverRR();
+    return;
+  }
 
   const val = textarea.value;
   const cursor = textarea.selectionStart;
 
   // Encontra a posição do '/' que iniciou o comando
   let inicioSlash = cursor - 1;
-  while (inicioSlash >= 0 && val[inicioSlash] !== '/') inicioSlash--;
+  while (inicioSlash >= 0 && val[inicioSlash] !== "/") inicioSlash--;
 
   // Verifica que o '/' é o começo do atalho (sem espaço antes na mesma palavra)
-  const antes = inicioSlash > 0 ? val[inicioSlash - 1] : '\n';
-  if (inicioSlash >= 0 && (antes === '\n' || antes === ' ' || inicioSlash === 0)) {
-    textarea.value = val.substring(0, inicioSlash) + mensagem + val.substring(cursor);
-    textarea.selectionStart = textarea.selectionEnd = inicioSlash + mensagem.length;
+  const antes = inicioSlash > 0 ? val[inicioSlash - 1] : "\n";
+  if (
+    inicioSlash >= 0 &&
+    (antes === "\n" || antes === " " || inicioSlash === 0)
+  ) {
+    textarea.value =
+      val.substring(0, inicioSlash) + mensagem + val.substring(cursor);
+    textarea.selectionStart = textarea.selectionEnd =
+      inicioSlash + mensagem.length;
   } else {
-    textarea.value = val.substring(0, cursor) + mensagem + val.substring(cursor);
+    textarea.value =
+      val.substring(0, cursor) + mensagem + val.substring(cursor);
     textarea.selectionStart = textarea.selectionEnd = cursor + mensagem.length;
   }
 
@@ -1187,7 +1226,9 @@ function mostrarPopoverRR(filtro) {
 
   carregarRespostasRapidas((itens) => {
     const filtrados = filtro
-      ? itens.filter((i) => i.atalho.toLowerCase().startsWith(filtro.toLowerCase()))
+      ? itens.filter((i) =>
+          i.atalho.toLowerCase().startsWith(filtro.toLowerCase()),
+        )
       : itens;
 
     rrItensAtuais = filtrados;
@@ -1200,13 +1241,18 @@ function mostrarPopoverRR(filtro) {
     const pop = document.createElement("div");
     pop.id = "wa-rr-popover";
 
-    const listaHtml = filtrados.length > 0
-      ? filtrados.map((item, idx) => `
-          <div class="wa-rr-popover-item${idx === 0 ? ' ativo' : ''}" data-idx="${idx}">
+    const listaHtml =
+      filtrados.length > 0
+        ? filtrados
+            .map(
+              (item, idx) => `
+          <div class="wa-rr-popover-item${idx === 0 ? " ativo" : ""}" data-idx="${idx}">
             <div class="wa-rr-popover-item-atalho">/${item.atalho}</div>
-            <div class="wa-rr-popover-item-msg">${item.mensagem.replace(/\n/g, ' ')}</div>
-          </div>`).join("")
-      : `<div class="wa-rr-popover-vazio">Nenhuma resposta rápida encontrada.</div>`;
+            <div class="wa-rr-popover-item-msg">${item.mensagem.replace(/\n/g, " ")}</div>
+          </div>`,
+            )
+            .join("")
+        : `<div class="wa-rr-popover-vazio">Nenhuma resposta rápida encontrada.</div>`;
 
     pop.innerHTML = `
       <div id="wa-rr-popover-header">
@@ -1502,7 +1548,8 @@ function injetarPainelNaGaveta(drawer) {
     const btnFiltro = drawer.querySelector("#wa-btn-filtro");
     if (btnFiltro) btnFiltro.style.setProperty("display", "none", "important");
     const btnGerenciar = drawer.querySelector("#wa-btn-gerenciar-etiquetas");
-    if (btnGerenciar) btnGerenciar.style.setProperty("display", "none", "important");
+    if (btnGerenciar)
+      btnGerenciar.style.setProperty("display", "none", "important");
     const btnRR = drawer.querySelector("#wa-btn-respostas-rapidas");
     if (btnRR) btnRR.style.setProperty("display", "none", "important");
     mudarTituloGaveta(drawer, "Agendar nova mensagem");
@@ -1529,8 +1576,7 @@ function injetarPainelNaGaveta(drawer) {
       if (btnGerenciar)
         btnGerenciar.style.setProperty("display", "none", "important");
       const btnRR = drawer.querySelector("#wa-btn-respostas-rapidas");
-      if (btnRR)
-        btnRR.style.setProperty("display", "none", "important");
+      if (btnRR) btnRR.style.setProperty("display", "none", "important");
       mudarTituloGaveta(drawer, "Agendar nova mensagem");
       modoAgendamento = true;
 
@@ -1745,14 +1791,14 @@ function renderizarHistorico() {
       `;
 
       const etiquetaHtml = item.etiqueta
-          ? `<span class="wa-item-etiqueta-badge" title="Etiqueta"><svg viewBox="0 0 24 24" fill="none" style="color: ${cor};"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M15.393 5C16.314 5 17.167 5.447 17.685 6.182L21.812 12L21.346 12.657L17.686 17.816C17.166 18.553 16.314 19 15.393 19L5.81 18.992C4.262 18.992 3 17.738 3 16.19V7.81C3 6.261 4.262 5.008 5.809 5.008L15.393 5Z"></path></svg><strong>${item.etiqueta}</strong></span>`
+        ? `<span class="wa-item-etiqueta-badge" title="Etiqueta"><svg viewBox="0 0 24 24" fill="none" style="color: ${cor};"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M15.393 5C16.314 5 17.167 5.447 17.685 6.182L21.812 12L21.346 12.657L17.686 17.816C17.166 18.553 16.314 19 15.393 19L5.81 18.992C4.262 18.992 3 17.738 3 16.19V7.81C3 6.261 4.262 5.008 5.809 5.008L15.393 5Z"></path></svg><strong>${item.etiqueta}</strong></span>`
         : btnAdicionarHtml;
 
       const agendadorHtml = item.agendador
         ? `<div style="font-size: 11px; color: var(--secondary, #8696a0); margin-top: 1px; display: flex; align-items: center; gap: 4px;">Agendado por: ${item.agendador} ${etiquetaHtml}</div>`
         : `<div style="font-size: 11px; margin-top: 1px; display: flex; align-items: center; gap: 4px;">${etiquetaHtml}</div>`;
 
-      const anexoBadge = item.anexo 
+      const anexoBadge = item.anexo
         ? `<span style="display: inline-flex; align-items: center; gap: 3px; color: var(--icon, #8696a0); margin-bottom: 2px; font-weight: 550; font-size: 10px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${item.anexo.nome}">
             <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" style="flex-shrink: 0;"><path d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5c0-1.38 1.12-2.5 2.5-2.5s2.5 1.12 2.5 2.5v10.5c0 .55-.45 1-1 1s-1-.45-1-1V6H10v9c0 1.66 1.34 3 3 3s3-1.34 3-3V5c0-2.21-1.79-4-4-4S8 2.79 8 5v12.5c0 3.59 2.91 6.5 6.5 6.5s6.5-2.91 6.5-6.5V6h-1.5z"></path></svg>
             ${item.anexo.nome}
@@ -1930,7 +1976,7 @@ function renderizarLista() {
         });
       const card = document.createElement("div");
       card.className = "sa-item";
-      
+
       const imgHtml =
         item.imagem && item.imagem.trim() !== ""
           ? `<img src="${item.imagem}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`
@@ -1956,7 +2002,7 @@ function renderizarLista() {
       const criadoEmHtml = item.criadoEm
         ? `<div style="font-size: 11px; color: var(--WDS-content-external-link, #21c063); margin-top: 1px; opacity: 0.85;">${new Date(item.criadoEm).toLocaleDateString("pt-BR")} às ${new Date(item.criadoEm).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</div>`
         : "";
-      const anexoBadge = item.anexo 
+      const anexoBadge = item.anexo
         ? `<span style="display: inline-flex; align-items: center; gap: 3px; color: var(--icon, #8696a0); margin-bottom: 2px; font-weight: 550; font-size: 10px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${item.anexo.nome}">
             <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" style="flex-shrink: 0;"><path d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5c0-1.38 1.12-2.5 2.5-2.5s2.5 1.12 2.5 2.5v10.5c0 .55-.45 1-1 1s-1-.45-1-1V6H10v9c0 1.66 1.34 3 3 3s3-1.34 3-3V5c0-2.21-1.79-4-4-4S8 2.79 8 5v12.5c0 3.59 2.91 6.5 6.5 6.5s6.5-2.91 6.5-6.5V6h-1.5z"></path></svg>
             ${item.anexo.nome}
@@ -2266,7 +2312,7 @@ function injetarModalEstilos() {
         tempAnexo = {
           nome: file.name,
           tipo: file.type,
-          base64: event.target.result
+          base64: event.target.result,
         };
 
         const preview = document.getElementById("wa-modal-anexo-preview");
@@ -2355,16 +2401,16 @@ function injetarModalEstilos() {
     let i = cursor - 1;
     let found = false;
     while (i >= 0) {
-      if (val[i] === '/') {
-        const antes = i > 0 ? val[i - 1] : '\n';
-        if (antes === '\n' || antes === ' ' || i === 0) {
+      if (val[i] === "/") {
+        const antes = i > 0 ? val[i - 1] : "\n";
+        if (antes === "\n" || antes === " " || i === 0) {
           found = true;
           break;
         } else {
           break;
         }
       }
-      if (val[i] === ' ' || val[i] === '\n') break;
+      if (val[i] === " " || val[i] === "\n") break;
       i--;
     }
 
@@ -2406,7 +2452,8 @@ function injetarModalEstilos() {
     if (e.key === "ArrowUp") {
       e.preventDefault();
       if (rrItensAtuais.length > 0) {
-        rrIndiceAtivo = (rrIndiceAtivo - 1 + rrItensAtuais.length) % rrItensAtuais.length;
+        rrIndiceAtivo =
+          (rrIndiceAtivo - 1 + rrItensAtuais.length) % rrItensAtuais.length;
         atualizarDestaquePorOverRR();
       }
       return;
@@ -2496,11 +2543,9 @@ function injetarModalEstilos() {
   const labelEmojiTrigger = overlay.querySelector(
     "#wa-modal-etiqueta-btn-emoji",
   );
-  const labelInputEscrita = overlay.querySelector(
-    "#wa-modal-etiqueta-input-focus",
-  ) || overlay.querySelector(
-    "#wa-modal-etiqueta-input-escrita",
-  );
+  const labelInputEscrita =
+    overlay.querySelector("#wa-modal-etiqueta-input-focus") ||
+    overlay.querySelector("#wa-modal-etiqueta-input-escrita");
 
   if (labelEmojiTrigger && labelInputEscrita) {
     labelEmojiTrigger.addEventListener("click", (e) => {
@@ -2536,7 +2581,8 @@ function injetarModalEstilos() {
     const item = e.target.closest(".wa-emoji-item");
     if (item) {
       const emoji = item.getAttribute("data-emoji");
-      const target = (emojiPicker && emojiPicker._rrTarget) || emojiTargetInput || modalMsg;
+      const target =
+        (emojiPicker && emojiPicker._rrTarget) || emojiTargetInput || modalMsg;
       const start = target.selectionStart || 0;
       const end = target.selectionEnd || 0;
       const text = target.value || "";
@@ -2715,7 +2761,9 @@ function injetarModalEstilos() {
       () => {
         if (chrome.runtime.lastError) {
           console.error("Erro WAgenda:", chrome.runtime.lastError.message);
-          alert("Conexão perdida com a extensão. Por favor, atualize a extensão no chrome://extensions e recarregue a página do WhatsApp Web.");
+          alert(
+            "Conexão perdida com a extensão. Por favor, atualize a extensão no chrome://extensions e recarregue a página do WhatsApp Web.",
+          );
           return;
         }
         document.getElementById("wa-modal-overlay").style.display = "none";
