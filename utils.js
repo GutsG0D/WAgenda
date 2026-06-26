@@ -85,8 +85,15 @@ function simularDigitacao(el, text) {
     if (setter) setter.call(el, text);
     el.dispatchEvent(new Event("input", { bubbles: true }));
   } else {
-    document.execCommand("insertText", false, text);
-    el.dispatchEvent(new Event("input", { bubbles: true }));
+    const dataTransfer = new DataTransfer();
+    dataTransfer.setData("text/plain", text);
+    dataTransfer.setData("text", text);
+    const event = new ClipboardEvent("paste", {
+      clipboardData: dataTransfer,
+      bubbles: true,
+      cancelable: true,
+    });
+    el.dispatchEvent(event);
   }
 }
 
