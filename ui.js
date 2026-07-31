@@ -396,7 +396,7 @@ function abrirPopoverGerenciarEtiquetas(btnGerenciar) {
               row.style.padding = "6px 14px";
               row.style.gap = "8px";
               row.style.backgroundColor =
-                "var(--background-default-hover, rgba(134,150,160,0.08))";
+                "var(--WDS-surface-highlight, rgba(134,150,160,0.08))";
 
               row.innerHTML = `
               <div style="display: flex; align-items: center; gap: 12px; width: 100%; box-sizing: border-box; padding: 4px 0;">
@@ -618,7 +618,7 @@ function abrirPopoverAdicionarEtiqueta(btn, targetId, type) {
       });
 
       const criadorFormHtml = `
-        <div class="wa-popover-criador-etiqueta" style="display: none; flex-direction: column; gap: 8px; padding: 10px 14px; box-sizing: border-box; width: 100%; border-top: 1px solid var(--border-default, rgba(134,150,160,0.15));">
+        <div class="wa-popover-criador-etiqueta" style="display: none; flex-direction: column; gap: 8px; padding: 10px 14px; box-sizing: border-box; width: 100%; border-top: 1px solid var(--WDS-lines-outline-default, rgba(134,150,160,0.15));">
           <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
             <div style="position: relative; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
               <input type="color" class="wa-popover-etiqueta-cor-picker" value="#00a884" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: none; padding: 0; z-index: 2;">
@@ -631,7 +631,7 @@ function abrirPopoverAdicionarEtiqueta(btn, targetId, type) {
               </div>
             </div>
             <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
-              <input type="text" class="wa-popover-etiqueta-input-escrita" placeholder="Nome..." style="width: 100%; box-sizing: border-box; background: var(--WDS-surface-highlight, #202c33); color: var(--primary, #e9edef); border: 1px solid var(--border-default, rgba(134,150,160,0.15)); border-radius: 4px; padding: 4px 8px; font-size: 12px; outline: none;">
+              <input type="text" class="wa-popover-etiqueta-input-escrita" placeholder="Nome..." style="width: 100%; box-sizing: border-box; background: var(--WDS-surface-highlight, #202c33); color: var(--primary, #e9edef); border: 1px solid var(--WDS-lines-outline-default, rgba(134,150,160,0.15)); border-radius: 4px; padding: 4px 8px; font-size: 12px; outline: none;">
             </div>
           </div>
           <div style="display: flex; justify-content: flex-end; gap: 6px; width: 100%;">
@@ -647,7 +647,7 @@ function abrirPopoverAdicionarEtiqueta(btn, targetId, type) {
 
       if (mapaEtiquetas.size === 0) {
         popover.innerHTML = `
-          <div class="wa-filtro-popover-header" style="display: flex; justify-content: space-between; align-items: center; padding: 8px 14px; border-bottom: 1px solid var(--border-default, rgba(134,150,160,0.15));">
+          <div class="wa-filtro-popover-header" style="display: flex; justify-content: space-between; align-items: center; padding: 8px 14px; border-bottom: 1px solid var(--WDS-lines-outline-default, rgba(134,150,160,0.15));">
             <span style="font-weight: 600;">Etiquetar Mensagem</span>
             <button type="button" class="wa-popover-btn-nova-etiqueta" style="background: none; border: 1px dashed var(--WDS-persistent-always-branded, #00a884); color: var(--WDS-persistent-always-branded, #00a884); padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 600; cursor: pointer; outline: none;">
               + Nova
@@ -673,7 +673,7 @@ function abrirPopoverAdicionarEtiqueta(btn, targetId, type) {
           .join("");
 
         popover.innerHTML = `
-          <div class="wa-filtro-popover-header" style="display: flex; justify-content: space-between; align-items: center; padding: 8px 14px; border-bottom: 1px solid var(--border-default, rgba(134,150,160,0.15));">
+          <div class="wa-filtro-popover-header" style="display: flex; justify-content: space-between; align-items: center; padding: 8px 14px; border-bottom: 1px solid var(--WDS-lines-outline-default, rgba(134,150,160,0.15));">
             <span style="font-weight: 600;">Etiquetar Mensagem</span>
             <button type="button" class="wa-popover-btn-nova-etiqueta" style="background: none; border: 1px dashed var(--WDS-persistent-always-branded, #00a884); color: var(--WDS-persistent-always-branded, #00a884); padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 600; cursor: pointer; outline: none;">
               + Nova
@@ -2008,7 +2008,14 @@ function renderizarLista() {
             ${item.anexo.nome}
            </span>`
         : "";
-      card.innerHTML = `<div class="sa-item-avatar">${imgHtml}</div><div class="sa-item-content"><div class="sa-item-row"><div class="sa-item-nome">${item.nome}</div><div class="sa-item-data">${dataFormatada}</div></div><div class="sa-item-row" style="margin-top: 2px; align-items: flex-start;"><div class="sa-item-msg" style="display: flex; flex-direction: column; align-items: flex-start; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><div style="display: flex; flex-direction: column; width: 100%; overflow: hidden;">${anexoBadge}<span class="wa-msg-texto-puro" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; display: block;">${item.mensagem}</span></div></div><div class="sa-item-del" data-id="${item.id}" style="align-self: center;">Excluir</div></div>${agendadorHtml}${criadoEmHtml}</div>`;
+      card.innerHTML = `<div class="sa-item-avatar">${imgHtml}</div><div class="sa-item-content"><div class="sa-item-row"><div class="sa-item-nome">${item.nome}</div><div class="sa-item-data">${dataFormatada}</div></div><div class="sa-item-row" style="margin-top: 2px; align-items: flex-start;"><div class="sa-item-msg" style="display: flex; flex-direction: column; align-items: flex-start; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><div style="display: flex; flex-direction: column; width: 100%; overflow: hidden;">${anexoBadge}<span class="wa-msg-texto-puro" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; display: block;">${item.mensagem}</span></div></div><div class="sa-item-edit" data-id="${item.id}" style="align-self: center;">Editar</div><div class="sa-item-del" data-id="${item.id}" style="align-self: center;">Excluir</div></div>${agendadorHtml}${criadoEmHtml}</div>`;
+
+      card.querySelector(".sa-item-edit").addEventListener("click", (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        const id = e.target.getAttribute("data-id");
+        abrirModalEdicaoAgendamento(id);
+      });
 
       card.querySelector(".sa-item-del").addEventListener("click", (e) => {
         e.stopPropagation();
@@ -2103,7 +2110,26 @@ function atualizarContatosSelecionadosModal() {
   });
 }
 
+function resetarModalEstado() {
+  editingMessageId = null;
+  const overlay = document.getElementById("wa-modal-overlay");
+  if (overlay) {
+    const titleEl = overlay.querySelector("h2");
+    if (titleEl) titleEl.textContent = "Agendar Envio";
+  }
+  const salvarBtn = document.getElementById("wa-salvar-btn");
+  if (salvarBtn) {
+    salvarBtn.textContent = "Confirmar Agendamento";
+    salvarBtn.setAttribute("data-wa-tooltip", "Confirmar Agendamento");
+  }
+  const btnAddContato = document.getElementById("wa-btn-adicionar-contato");
+  if (btnAddContato) {
+    btnAddContato.style.display = "";
+  }
+}
+
 function abrirModalAgendamento() {
+  resetarModalEstado();
   document.getElementById("wa-modal-overlay").style.display = "flex";
 
   const msgInput = document.getElementById("wa-modal-msg");
@@ -2127,6 +2153,96 @@ function abrirModalAgendamento() {
 
   atualizarContatosSelecionadosModal();
   atualizarListaEtiquetasExistentes();
+}
+
+function abrirModalEdicaoAgendamento(id) {
+  chrome.storage.local.get({ mensagensPendentes: [] }, (res) => {
+    const pendentes = res.mensagensPendentes || [];
+    const item = pendentes.find((i) => String(i.id) === String(id));
+    if (!item) return;
+
+    editingMessageId = item.id;
+
+    contatosSelecionados = [{ nome: item.nome, imagem: item.imagem || "" }];
+
+    tempMsgText = item.mensagem || "";
+
+    const dateObj = new Date(item.tempo);
+    const year = dateObj.getFullYear();
+    const month = String(dateObj.getMonth() + 1).padStart(2, "0");
+    const day = String(dateObj.getDate()).padStart(2, "0");
+    const hours = String(dateObj.getHours()).padStart(2, "0");
+    const minutes = String(dateObj.getMinutes()).padStart(2, "0");
+    tempScheduleDate = `${year}-${month}-${day}T${hours}:${minutes}`;
+
+    tempAnexo = item.anexo || null;
+
+    const overlay = document.getElementById("wa-modal-overlay");
+    if (overlay) {
+      overlay.style.display = "flex";
+
+      const titleEl = overlay.querySelector("h2");
+      if (titleEl) titleEl.textContent = "Editar Mensagem Agendada";
+
+      const salvarBtn = document.getElementById("wa-salvar-btn");
+      if (salvarBtn) {
+        salvarBtn.textContent = "Salvar Edição";
+        salvarBtn.setAttribute("data-wa-tooltip", "Salvar alterações na mensagem agendada");
+      }
+
+      const agendadorInput = document.getElementById("wa-modal-agendador");
+      if (agendadorInput) agendadorInput.value = item.agendador || "";
+
+      const msgInput = document.getElementById("wa-modal-msg");
+      if (msgInput) {
+        msgInput.value = item.mensagem || "";
+        msgInput.dispatchEvent(new Event("input"));
+        msgInput.style.height = "auto";
+        msgInput.style.height = msgInput.scrollHeight + "px";
+      }
+
+      const dateInput = document.getElementById("wa-modal-data");
+      if (dateInput) dateInput.value = tempScheduleDate;
+
+      const hiddenEtiqueta = document.getElementById("wa-modal-etiqueta-valor");
+      const hiddenCor = document.getElementById("wa-modal-etiqueta-cor-valor");
+      if (hiddenEtiqueta) hiddenEtiqueta.value = item.etiqueta || "";
+      if (hiddenCor) hiddenCor.value = item.etiquetaCor || "";
+
+      const preview = document.getElementById("wa-modal-anexo-preview");
+      const nomeEl = document.getElementById("wa-modal-anexo-nome");
+      const iconEl = preview ? preview.querySelector(".wa-attachment-icon") : null;
+      if (tempAnexo && preview && nomeEl && iconEl) {
+        nomeEl.textContent = tempAnexo.nome;
+        if (tempAnexo.tipo && tempAnexo.tipo.startsWith("image/")) {
+          iconEl.innerHTML = `<img src="${tempAnexo.base64}" style="width: 24px; height: 24px; object-fit: cover; border-radius: 4px;">`;
+        } else {
+          iconEl.innerHTML = `<svg viewBox="0 0 24 24" height="24" width="24" fill="#8696a0"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"></path></svg>`;
+        }
+        preview.style.display = "flex";
+      } else if (preview) {
+        preview.style.display = "none";
+      }
+
+      atualizarContatosSelecionadosModal();
+      atualizarListaEtiquetasExistentes();
+
+      if (item.etiqueta) {
+        setTimeout(() => {
+          const container = document.getElementById("wa-modal-etiquetas-existentes");
+          if (container) {
+            container.querySelectorAll(".wa-modal-etiqueta-pill-click").forEach((pill) => {
+              if (pill.textContent.trim().includes(item.etiqueta)) {
+                pill.classList.add("selecionada");
+                pill.style.outline = `2px solid ${item.etiquetaCor || "#00a884"}`;
+                pill.style.outlineOffset = "1.5px";
+              }
+            });
+          }
+        }, 50);
+      }
+    }
+  });
 }
 
 function injetarModalEstilos() {
@@ -2675,6 +2791,7 @@ function injetarModalEstilos() {
     if (anexoInput) anexoInput.value = "";
     const preview = document.getElementById("wa-modal-anexo-preview");
     if (preview) preview.style.display = "none";
+    resetarModalEstado();
   });
 
   document
@@ -2738,6 +2855,72 @@ function injetarModalEstilos() {
       return;
     }
 
+    if (editingMessageId) {
+      const contato = contatosSelecionados[0] || { nome: "", imagem: "" };
+      const updatedData = {
+        id: editingMessageId,
+        nome: contato.nome,
+        agendador: agendador,
+        criadoEm: Date.now(),
+        imagem: contato.imagem,
+        mensagem: msg,
+        tempo: scheduleTime,
+        etiqueta: etiqueta,
+        etiquetaCor: etiquetaCor,
+        anexo: tempAnexo,
+      };
+
+      chrome.runtime.sendMessage(
+        {
+          action: "atualizar_agendamento",
+          data: updatedData,
+        },
+        () => {
+          if (chrome.runtime.lastError) {
+            console.error("Erro WAgenda:", chrome.runtime.lastError.message);
+            alert(
+              "Conexão perdida com a extensão. Por favor, atualize a extensão no chrome://extensions e recarregue a página do WhatsApp Web.",
+            );
+            return;
+          }
+          document.getElementById("wa-modal-overlay").style.display = "none";
+          emojiPicker.style.display = "none";
+          document.getElementById("wa-modal-data").value = "";
+          const agendadorInput = document.getElementById("wa-modal-agendador");
+          if (agendadorInput) agendadorInput.value = "";
+          const hiddenEtiqueta = document.getElementById(
+            "wa-modal-etiqueta-valor",
+          );
+          const hiddenCor = document.getElementById(
+            "wa-modal-etiqueta-cor-valor",
+          );
+          if (hiddenEtiqueta) hiddenEtiqueta.value = "";
+          if (hiddenCor) hiddenCor.value = "";
+          const criador = document.getElementById("wa-modal-criador-etiqueta");
+          if (criador) criador.style.display = "none";
+          const msgInput = document.getElementById("wa-modal-msg");
+          msgInput.value = "";
+          msgInput.style.height = "auto";
+
+          // Limpa estado global
+          contatosSelecionados = [];
+          tempMsgText = "";
+          tempScheduleDate = "";
+          tempAnexo = null;
+          const anexoInput = document.getElementById("wa-modal-anexo-input");
+          if (anexoInput) anexoInput.value = "";
+          const preview = document.getElementById("wa-modal-anexo-preview");
+          if (preview) preview.style.display = "none";
+          imgUrl = "";
+          resetarModalEstado();
+
+          renderizarLista();
+          atualizarContadorBadge();
+        },
+      );
+      return;
+    }
+
     const dataList = contatosSelecionados.map((contato, idx) => {
       return {
         id: `msg_${Date.now()}_${idx}`,
@@ -2795,6 +2978,7 @@ function injetarModalEstilos() {
         const preview = document.getElementById("wa-modal-anexo-preview");
         if (preview) preview.style.display = "none";
         imgUrl = "";
+        resetarModalEstado();
 
         document.getElementById("btn-agenda-wa").click();
         atualizarContadorBadge();

@@ -13,3 +13,4 @@ let filtroAtivo = null;
 let tempAnexo = null;
 let inicializado = false;
 let currentTab = "";
+let editingMessageId = null;

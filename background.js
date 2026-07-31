@@ -33,6 +33,25 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     });
     return true;
   }
+  if (request.action === "atualizar_agendamento") {
+    const msgData = request.data;
+    chrome.storage.local.get({ mensagensPendentes: [] }, (result) => {
+      const lista = result.mensagensPendentes || [];
+      const idx = lista.findIndex((item) => item.id === msgData.id);
+      if (idx !== -1) {
+        lista[idx] = msgData;
+      } else {
+        lista.push(msgData);
+      }
+      chrome.storage.local.set({ mensagensPendentes: lista }, () => {
+        chrome.alarms.clear(msgData.id, () => {
+          chrome.alarms.create(msgData.id, { when: msgData.tempo });
+          sendResponse({ status: "ok" });
+        });
+      });
+    });
+    return true;
+  }
 });
 
 chrome.alarms.onAlarm.addListener((alarm) => {

@@ -40,7 +40,7 @@
 #btn-agenda-wa:hover,
 body.agendador-ativo #btn-agenda-wa {
   background-color: var(
-    --background-default-hover,
+    --WDS-surface-highlight,
     rgba(134, 150, 160, 0.15)
   ) !important;
 }
@@ -200,6 +200,30 @@ body.agendador-ativo .rel-ponteiros {
 .sa-item-del:hover {
   filter: brightness(1.2);
 }
+.sa-item-edit {
+  box-sizing: border-box;
+  height: 26px;
+  padding: 0 12px;
+  margin-left: 8px;
+  margin-top: 2px;
+  background-color: var(--WDS-surface-highlight, rgba(0, 168, 132, 0.15));
+  color: var(--WDS-content-action-default, #00a884);
+  border: 1px solid
+    var(--WDS-lines-outline-deemphasized, rgba(255, 255, 255, 0.1));
+  border-radius: var(--x1lh8xxe, 24px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 545;
+  font-family: inherit;
+  cursor: pointer;
+  transition: filter 0.2s;
+  flex-shrink: 0;
+}
+.sa-item-edit:hover {
+  filter: brightness(1.2);
+}
 
 #wa-historico-drawer {
   position: absolute;
@@ -208,7 +232,8 @@ body.agendador-ativo .rel-ponteiros {
   right: 0;
   height: 48px;
   background-color: var(--WDS-surface-default, #111b21);
-  border-top: 1px solid var(--border-default, rgba(134, 150, 160, 0.15));
+  border-top: 1px solid
+    var(--WDS-lines-outline-default, rgba(134, 150, 160, 0.15));
   display: flex;
   flex-direction: column;
   transition: height 0.3s cubic-bezier(0.25, 1, 0.5, 1);
@@ -435,7 +460,7 @@ body.agendador-ativo .rel-ponteiros {
     opacity 0.15s ease,
     transform 0.15s ease;
   font-family: var(
-    --font-family,
+    --x1rl2gpv,
     "Segoe UI",
     -apple-system,
     BlinkMacSystemFont,
@@ -493,7 +518,7 @@ body.agendador-ativo .rel-ponteiros {
 #wa-btn-filtro:hover,
 #wa-btn-gerenciar-etiquetas:hover {
   background-color: var(
-    --background-default-hover,
+    --WDS-surface-highlight,
     rgba(134, 150, 160, 0.15)
   ) !important;
 }
@@ -512,7 +537,8 @@ body.agendador-ativo .rel-ponteiros {
   font-size: 14px;
   padding: 4px 0;
   border: none !important;
-  border-bottom: 2px solid var(--border-default, rgba(134, 150, 160, 0.25)) !important;
+  border-bottom: 2px solid
+    var(--WDS-lines-outline-default, rgba(134, 150, 160, 0.25)) !important;
   background: transparent !important;
   color: var(--primary, #e9edef) !important;
   outline: none !important;
@@ -522,7 +548,7 @@ body.agendador-ativo .rel-ponteiros {
 #wa-modal-etiqueta-input-escrita:focus {
   border-bottom-color: var(
     --WDS-persistent-always-branded,
-    var(--input-border-active, #00a884)
+    var(--WDS-content-action-default, #00a884)
   ) !important;
 }
 #wa-modal-etiqueta-btn-emoji:hover {
@@ -531,8 +557,8 @@ body.agendador-ativo .rel-ponteiros {
 
 #wa-filtro-popover {
   position: fixed;
-  background-color: var(--dropdown-background, #233138);
-  border: 1px solid var(--border-default, rgba(134, 150, 160, 0.15));
+  background-color: var(--WDS-surface-default, #233138);
+  border: 1px solid var(--WDS-lines-outline-default, rgba(134, 150, 160, 0.15));
   border-radius: 8px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
   width: 220px;
@@ -540,7 +566,7 @@ body.agendador-ativo .rel-ponteiros {
   overflow: hidden;
   padding: 10px 0;
   font-family: var(
-    --font-family,
+    --x1rl2gpv,
     "Segoe UI",
     -apple-system,
     BlinkMacSystemFont,
@@ -580,7 +606,7 @@ body.agendador-ativo .rel-ponteiros {
   transition: background-color 0.2s;
 }
 .wa-filtro-limpar-btn:hover {
-  background-color: var(--background-default-hover, rgba(134, 150, 160, 0.15));
+  background-color: var(--WDS-surface-highlight, rgba(134, 150, 160, 0.15));
 }
 .wa-filtro-secao {
   padding: 8px 0;
@@ -608,7 +634,7 @@ body.agendador-ativo .rel-ponteiros {
   text-overflow: ellipsis;
 }
 .wa-filtro-opcao:hover {
-  background-color: var(--background-default-hover, rgba(134, 150, 160, 0.15));
+  background-color: var(--WDS-surface-highlight, rgba(134, 150, 160, 0.15));
 }
 .wa-filtro-opcao.selecionado {
   color: var(--WDS-content-action-default, #00a884);
@@ -624,8 +650,9 @@ body.agendador-ativo .rel-ponteiros {
 
 #wa-gerenciar-etiquetas-popover {
   position: fixed;
-  background-color: var(--dropdown-background, #233138);
-  border: 1px solid var(--border-default, rgba(134, 150, 160, 0.15));
+  background-color: var(--WDS-surface-default, #233138);
+  border: 1px solid
+    var(--WDS-lines-outline-deemphasized, rgba(134, 150, 160, 0.15));
   border-radius: 8px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
   width: 280px;
@@ -633,7 +660,7 @@ body.agendador-ativo .rel-ponteiros {
   overflow: hidden;
   padding: 10px 0;
   font-family: var(
-    --font-family,
+    --x1rl2gpv,
     "Segoe UI",
     -apple-system,
     BlinkMacSystemFont,
@@ -654,8 +681,8 @@ body.agendador-ativo .rel-ponteiros {
 
 #wa-adicionar-etiqueta-popover {
   position: fixed;
-  background-color: var(--dropdown-background, #233138);
-  border: 1px solid var(--border-default, rgba(134, 150, 160, 0.15));
+  background-color: var(--WDS-surface-emphasized, #233138);
+  border: 1px solid var(--WDS-lines-outline-default, rgba(134, 150, 160, 0.15));
   border-radius: 8px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
   width: 200px;
@@ -663,7 +690,7 @@ body.agendador-ativo .rel-ponteiros {
   overflow: hidden;
   padding: 10px 0;
   font-family: var(
-    --font-family,
+    --x1rl2gpv,
     "Segoe UI",
     -apple-system,
     BlinkMacSystemFont,
@@ -694,7 +721,7 @@ body.agendador-ativo .rel-ponteiros {
   transition: background-color 0.2s;
 }
 .wa-gerenciar-etiquetas-opcao:hover {
-  background-color: var(--background-default-hover, rgba(134, 150, 160, 0.15));
+  background-color: var(--WDS-surface-highlight, rgba(134, 150, 160, 0.15));
 }
 .wa-gerenciar-etiquetas-left {
   display: flex;
@@ -729,7 +756,7 @@ body.agendador-ativo .rel-ponteiros {
     color 0.2s;
 }
 .wa-gerenciar-etiquetas-btn:hover {
-  background-color: var(--background-default-hover, rgba(134, 150, 160, 0.15));
+  background-color: var(--WDS-surface-highlight, rgba(134, 150, 160, 0.15));
   color: var(--primary-strong, var(--primary, #e9edef));
 }
 .wa-gerenciar-etiquetas-btn.delete:hover {
@@ -741,7 +768,8 @@ body.agendador-ativo .rel-ponteiros {
   font-size: 13px;
   padding: 4px 6px;
   border: none;
-  border-bottom: 2px solid var(--border-default, rgba(134, 150, 160, 0.25));
+  border-bottom: 2px solid
+    var(--WDS-lines-outline-default, rgba(134, 150, 160, 0.25));
   background: transparent;
   color: var(--primary);
   outline: none;
@@ -750,7 +778,7 @@ body.agendador-ativo .rel-ponteiros {
 .wa-gerenciar-edit-nome-input:focus {
   border-bottom-color: var(
     --WDS-persistent-always-branded,
-    var(--input-border-active, #00a884)
+    var(--WDS-content-action-default, #00a884)
   ) !important;
 }
 
@@ -771,7 +799,7 @@ body.agendador-ativo .rel-ponteiros {
 }
 #wa-btn-respostas-rapidas:hover {
   background-color: var(
-    --background-default-hover,
+    --WDS-surface-highlight,
     rgba(134, 150, 160, 0.15)
   ) !important;
 }
@@ -830,7 +858,7 @@ body.agendador-ativo .rel-ponteiros {
     color 0.2s;
 }
 .wa-rr-gaveta-btn-back:hover {
-  background-color: var(--background-default-hover, rgba(134, 150, 160, 0.15));
+  background-color: var(--WDS-surface-highlight, rgba(134, 150, 160, 0.15));
   color: var(--primary, #e9edef);
 }
 #wa-rr-gaveta-lista {
@@ -893,7 +921,7 @@ body.agendador-ativo .rel-ponteiros {
     color 0.2s;
 }
 .wa-rr-gaveta-item-btn:hover {
-  background-color: var(--background-default-hover, rgba(134, 150, 160, 0.15));
+  background-color: var(--WDS-surface-highlight, rgba(134, 150, 160, 0.15));
   color: var(--primary, #e9edef);
 }
 .wa-rr-gaveta-item-btn.delete:hover {
@@ -952,7 +980,7 @@ body.agendador-ativo .rel-ponteiros {
   display: flex;
 }
 #wa-rr-modal {
-  background-color: var(--dropdown-background, #233138);
+  background-color: var(--WDS-surface-emphasized, #233138);
   border-radius: 18px;
   box-shadow:
     0 2px 18px #00000042,
@@ -964,7 +992,7 @@ body.agendador-ativo .rel-ponteiros {
   overflow: hidden;
   animation: waScaleUp 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
   font-family: var(
-    --font-family,
+    --x1rl2gpv,
     "Segoe UI",
     -apple-system,
     BlinkMacSystemFont,
@@ -1006,7 +1034,7 @@ body.agendador-ativo .rel-ponteiros {
     color 0.2s;
 }
 .wa-rr-modal-btn-fechar:hover {
-  background-color: var(--background-default-hover, rgba(134, 150, 160, 0.15));
+  background-color: var(--WDS-surface-highlight, rgba(134, 150, 160, 0.15));
   color: var(--primary, #e9edef);
 }
 #wa-rr-modal-body {
@@ -1023,7 +1051,8 @@ body.agendador-ativo .rel-ponteiros {
 .wa-rr-modal-input-container {
   display: flex;
   align-items: center;
-  border-bottom: 2px solid var(--border-default, rgba(134, 150, 160, 0.15));
+  border-bottom: 2px solid
+    var(--WDS-lines-outline-default, rgba(134, 150, 160, 0.15));
   padding-bottom: 5px;
   transition: border-bottom-color 0.2s;
   width: 100%;
@@ -1031,14 +1060,14 @@ body.agendador-ativo .rel-ponteiros {
 .wa-rr-modal-input-container:focus-within {
   border-bottom-color: var(
     --WDS-persistent-always-branded,
-    var(--input-border-active, #00a884)
+    var(--WDS-content-action-default, #00a884)
   ) !important;
 }
 .wa-rr-modal-input-container.wa-erro {
-  border-bottom-color: var(--danger, #ea0038) !important;
+  border-bottom-color: var(--WDS-danger-emphasized, #ea0038) !important;
 }
 .wa-rr-modal-erro {
-  color: var(--danger, #ea0038);
+  color: var(--WDS-danger-emphasized, #ea0038);
   font-size: 12px;
   line-height: 16px;
   margin-top: 2px;
@@ -1115,7 +1144,7 @@ body.agendador-ativo .rel-ponteiros {
 }
 .wa-rr-modal-emoji-btn:hover {
   color: var(--primary, #e9edef);
-  background-color: var(--background-default-hover, rgba(134, 150, 160, 0.15));
+  background-color: var(--WDS-surface-highlight, rgba(134, 150, 160, 0.15));
 }
 #wa-rr-modal-footer {
   display: flex;
@@ -1140,10 +1169,10 @@ body.agendador-ativo .rel-ponteiros {
 .wa-rr-modal-btn-cancelar {
   background: transparent;
   color: var(--WDS-content-action-emphasized, #00a884);
-  border: 1px solid var(--border-default, rgba(134, 150, 160, 0.15));
+  border: 1px solid var(--WDS-lines-outline-default, rgba(134, 150, 160, 0.15));
 }
 .wa-rr-modal-btn-cancelar:hover {
-  background-color: var(--background-default-hover, rgba(134, 150, 160, 0.15));
+  background-color: var(--WDS-surface-highlight, rgba(134, 150, 160, 0.15));
 }
 .wa-rr-modal-btn-salvar {
   background-color: var(--WDS-accent, #00a884);
@@ -1165,8 +1194,8 @@ body.agendador-ativo .rel-ponteiros {
   bottom: calc(100% + 4px);
   left: 0;
   right: 0;
-  background-color: var(--dropdown-background, #233138);
-  border: 1px solid var(--border-default, rgba(134, 150, 160, 0.15));
+  background-color: var(--WDS-surface-emphasized, #233138);
+  border: 1px solid var(--WDS-lines-outline-default, rgba(134, 150, 160, 0.15));
   border-radius: 8px;
   box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.4);
   z-index: 10010;
@@ -1175,7 +1204,7 @@ body.agendador-ativo .rel-ponteiros {
   display: flex;
   flex-direction: column;
   font-family: var(
-    --font-family,
+    --x1rl2gpv,
     "Segoe UI",
     -apple-system,
     BlinkMacSystemFont,
@@ -1212,7 +1241,7 @@ body.agendador-ativo .rel-ponteiros {
     color 0.2s;
 }
 .wa-rr-popover-btn-gerenciar:hover {
-  background-color: var(--background-default-hover, rgba(134, 150, 160, 0.15));
+  background-color: var(--WDS-surface-highlight, rgba(134, 150, 160, 0.15));
   color: var(--primary, #e9edef);
 }
 #wa-rr-popover-lista {
@@ -1258,7 +1287,7 @@ body.agendador-ativo .rel-ponteiros {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: var(--modal-backdrop, rgba(11, 20, 26, 0.85));
+  background: var(--WDS-surface-overlay, rgba(11, 20, 26, 0.85));
   z-index: 10001;
   display: none;
   justify-content: center;
@@ -1302,7 +1331,7 @@ body.agendador-ativo .rel-ponteiros {
   background: var(--WDS-surface-highlight, #2a3942);
   padding: 8px 12px;
   border-radius: 8px;
-  border: 1px solid var(--border-default, rgba(134, 150, 160, 0.15));
+  border: 1px solid var(--WDS-lines-outline-default, rgba(134, 150, 160, 0.15));
 }
 .wa-contato-selecionado-info {
   display: flex;
@@ -1371,7 +1400,7 @@ body.agendador-ativo .rel-ponteiros {
 .wa-modal h2 {
   margin-top: 0;
   font-size: 18px;
-  color: var(--modal-title, var(--primary, #e9edef));
+  color: var(--WDS-content-primary, var(--primary, #e9edef));
   font-weight: normal;
 }
 .wa-modal label {
@@ -1383,7 +1412,7 @@ body.agendador-ativo .rel-ponteiros {
 }
 .wa-modal input {
   background: var(--WDS-surface-highlight, #2a3942);
-  border: 1px solid var(--border-default, rgba(134, 150, 160, 0.15));
+  border: 1px solid var(--WDS-lines-outline-default, rgba(134, 150, 160, 0.15));
   color: var(--primary-strong, var(--primary, #e9edef));
   padding: 10px;
   width: 100%;
@@ -1395,7 +1424,10 @@ body.agendador-ativo .rel-ponteiros {
 }
 .wa-modal input:focus {
   border: 1px solid
-    var(--WDS-persistent-always-branded, var(--input-border-active, #00a884));
+    var(
+      --WDS-persistent-always-branded,
+      var(--WDS-content-action-default, #00a884)
+    );
 }
 .wa-modal input[type="datetime-local"] {
   position: relative;
@@ -1462,7 +1494,8 @@ body.agendador-ativo .rel-ponteiros {
       var(--panel-background-colored-deemphasized, #111b21)
     )
   );
-  border-top: 1px solid var(--border-default, rgba(134, 150, 160, 0.15));
+  border-top: 1px solid
+    var(--WDS-lines-outline-default, rgba(134, 150, 160, 0.15));
   margin-top: 10px;
   margin-bottom: 15px;
   border-radius: 8px;
@@ -1484,7 +1517,7 @@ body.agendador-ativo .rel-ponteiros {
   margin-bottom: 4px;
 }
 .wa-compose-btn:hover {
-  background-color: var(--background-default-hover, rgba(255, 255, 255, 0.05));
+  background-color: var(--WDS-surface-highlight, rgba(255, 255, 255, 0.05));
   color: var(--primary-strong, var(--primary, #d1d7db));
 }
 .wa-compose-input-wrapper {
@@ -1497,14 +1530,14 @@ body.agendador-ativo .rel-ponteiros {
   align-items: center;
   min-height: 40px;
   box-sizing: border-box;
-  border: 1px solid var(--compose-input-border, transparent);
+  border: 1px solid var(--WDS-lines-outline-default, transparent);
 }
 .wa-modal textarea#wa-modal-msg {
   width: 100%;
   border: none !important;
   outline: none !important;
   background: transparent !important;
-  color: var(--compose-input-color, var(--primary, #e9edef)) !important;
+  color: var(--WDS-content-primary, var(--primary, #e9edef)) !important;
   font-size: 15px;
   padding: 4px 0;
   resize: none;
@@ -1515,7 +1548,7 @@ body.agendador-ativo .rel-ponteiros {
   font-family: inherit;
 }
 .wa-modal textarea#wa-modal-msg::placeholder {
-  color: var(--input-placeholder, #8696a0);
+  color: var(--WDS-content-deemphasized, #8696a0);
 }
 
 #wa-emoji-picker {
@@ -1524,12 +1557,9 @@ body.agendador-ativo .rel-ponteiros {
   left: 24px;
   right: 24px;
   height: 380px;
-  background: var(
-    --dropdown-background,
-    var(--background-default, #233138)
-  ) !important;
+  background: var(--WDS-surface-emphasized, #233138) !important;
   border-radius: 8px;
-  border: 1px solid var(--border-default, rgba(134, 150, 160, 0.15)) !important;
+  border: 1px solid var(--WDS-lines-outline-default, rgba(134, 150, 160, 0.15)) !important;
   box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.5);
   display: none;
   flex-direction: column;
@@ -1539,7 +1569,7 @@ body.agendador-ativo .rel-ponteiros {
 }
 .wa-emoji-search-wrapper {
   padding: 8px 12px;
-  background: var(--dropdown-background, var(--background-default, #233138));
+  background: var(--WDS-surface-emphasized, #233138);
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -1634,7 +1664,8 @@ body.agendador-ativo .rel-ponteiros {
     --panel-header-background,
     var(--panel-background-colored, #1f2c34)
   );
-  border-top: 1px solid var(--border-default, rgba(134, 150, 160, 0.15));
+  border-top: 1px solid
+    var(--WDS-lines-outline-default, rgba(134, 150, 160, 0.15));
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
@@ -1652,7 +1683,7 @@ body.agendador-ativo .rel-ponteiros {
     background-color 0.2s;
 }
 .wa-expression-selector-tab:hover {
-  background-color: var(--background-default-hover, rgba(255, 255, 255, 0.05));
+  background-color: var(--WDS-surface-highlight, rgba(255, 255, 255, 0.05));
   color: var(--primary, var(--icon-ack, #00a884));
 }
 .wa-expression-selector-tab.active {
@@ -1696,12 +1727,13 @@ body.agendador-ativo .rel-ponteiros {
   box-sizing: border-box;
 }
 .wa-emoji-item:hover {
-  background-color: var(--background-default-hover, rgba(255, 255, 255, 0.08));
+  background-color: var(--WDS-surface-highlight, rgba(255, 255, 255, 0.08));
 }
 .wa-emoji-tabs {
   display: flex;
-  background: var(--dropdown-background, var(--background-default, #233138));
-  border-bottom: 1px solid var(--border-default, rgba(134, 150, 160, 0.15));
+  background: var(--WDS-surface-emphasized, #233138);
+  border-bottom: 1px solid
+    var(--WDS-lines-outline-default, rgba(134, 150, 160, 0.15));
   height: 46px;
   align-items: center;
   justify-content: flex-start;
