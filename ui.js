@@ -3157,7 +3157,16 @@ document.addEventListener(
    ========================================================= */
 
 const TEMPLATE_PADRAO_CONSULTA =
-  "Olá, *{nome}*!\n\nLembramos que você tem uma consulta/exame agendado para o dia *{data}* às *{horario}* na unidade *{unidade}* com o(a) profissional *{profissional}*.\n\n_Em caso de dúvidas ou necessidade de informações, responda a esta mensagem._";
+  "Olá, *{nome}*, tudo bem? Aqui é da equipe da sua *{unidade}*. 👋\n\n" +
+  "Passando para relembrar que o seu atendimento com o(a) *{profissional}* está agendado para:\n\n" +
+  "📅 Data: *{data}* (*{semana}*)\n" +
+  "⏰ Horário: *{horario}*\n\n" +
+  "Recomendações importantes:\n\n" +
+  "Chegue um pouco antes do horário marcado (O tempo de tolerância para atrasos é de 15 minutos).\n\n" +
+  "Traga sua caderneta de vacinação/pré-natal (se aplicável), receitas médicas atuais e documentos.\n\n" +
+  "⚠️ *Importante:* Se você tiver algum imprevisto e não puder vir, nos avise respondendo aqui. Assim, conseguimos ajudar outro vizinho que também está precisando de atendimento.\n\n" +
+  "Contamos com a sua presença! 💙\n\n" +
+  "_Esta é uma mensagem programada._";
 
 function injetarModalImportarPdf() {
   if (document.getElementById("wa-modal-import-pdf-overlay")) return;
@@ -3252,6 +3261,7 @@ function injetarModalImportarPdf() {
               <div class="wa-pdf-tags-row">
                 <button type="button" class="wa-pdf-tag-btn" data-tag="*{nome}*" title="Inserir Nome em Negrito">+ *{nome}*</button>
                 <button type="button" class="wa-pdf-tag-btn" data-tag="*{data}*" title="Inserir Data da Consulta em Negrito">+ *{data}*</button>
+                <button type="button" class="wa-pdf-tag-btn" data-tag="*{semana}*" title="Inserir Dia da Semana">+ *{semana}*</button>
                 <button type="button" class="wa-pdf-tag-btn" data-tag="*{horario}*" title="Inserir Horário em Negrito">+ *{horario}*</button>
                 <button type="button" class="wa-pdf-tag-btn" data-tag="*{unidade}*" title="Inserir Unidade">+ *{unidade}*</button>
                 <button type="button" class="wa-pdf-tag-btn" data-tag="*{profissional}*" title="Inserir Profissional">+ *{profissional}*</button>
@@ -4073,10 +4083,42 @@ function atualizarLivePreviewTemplate() {
     const msg = gerarMensagemPaciente(template, primeiro, agendaPdfDados);
     previewEl.innerHTML = formatarTextoWhatsApp(msg);
   } else {
+    const toggleApenasHoras = document.getElementById("wa-pdf-toggle-apenas-horas");
+    const usarApenasHoras = toggleApenasHoras ? toggleApenasHoras.checked : true;
+    const horaExemplo = usarApenasHoras ? "07h" : "07:15";
     const msgExemplo =
-      "Olá, *Nome do Paciente*!\n\nLembramos que você tem uma consulta/exame agendado para o dia *DD/MM/AAAA* às *07h* na unidade *Unidade de Saúde* com o(a) profissional *Médico(a)*.\n\n_Em caso de dúvidas ou reagendamento, responda a esta mensagem._";
+      "Olá, *Nome do Paciente*, tudo bem? Aqui é da equipe da sua *Unidade de Saúde*. 👋\n\n" +
+      "Passando para relembrar que o seu atendimento com o(a) *Médico(a)* está agendado para:\n\n" +
+      `📅 Data: *DD/MM/AAAA* (*Segunda-feira*)\n` +
+      `⏰ Horário: *${horaExemplo}*\n\n` +
+      "Recomendações importantes:\n\n" +
+      "Chegue um pouco antes do horário marcado (O tempo de tolerância para atrasos é de 15 minutos).\n\n" +
+      "Traga sua caderneta de vacinação/pré-natal (se aplicável), receitas médicas atuais e documentos.\n\n" +
+      "⚠️ *Importante:* Se você tiver algum imprevisto e não puder vir, nos avise respondendo aqui. Assim, conseguimos ajudar outro vizinho que também está precisando de atendimento.\n\n" +
+      "Contamos com a sua presença! 💙\n\n" +
+      "_Esta é uma mensagem programada._";
     previewEl.innerHTML = formatarTextoWhatsApp(msgExemplo);
   }
+}
+
+function extrairDiaSemana(dataStr) {
+  if (!dataStr) return "";
+  const parts = dataStr.split("/");
+  if (parts.length !== 3) return "";
+  const dia = parseInt(parts[0], 10);
+  const mes = parseInt(parts[1], 10) - 1;
+  const ano = parseInt(parts[2], 10);
+  const d = new Date(ano, mes, dia);
+  const dias = [
+    "Domingo",
+    "Segunda-feira",
+    "Terça-feira",
+    "Quarta-feira",
+    "Quinta-feira",
+    "Sexta-feira",
+    "Sábado",
+  ];
+  return dias[d.getDay()] || "";
 }
 
 function formatarApenasHora(horarioStr) {
@@ -4093,6 +4135,12 @@ function gerarMensagemPaciente(template, paciente, dadosGerais) {
   let msg = template || "";
   const nome = paciente.nome || "";
   const data = (dadosGerais && dadosGerais.dataConsulta) || "";
+  const semana =
+    (dadosGerais &&
+      dadosGerais.dadosEnvioCalculados &&
+      dadosGerais.dadosEnvioCalculados.diaSemanaConsulta) ||
+    extrairDiaSemana(data) ||
+    "";
 
   const usarApenasHoras =
     dadosGerais && dadosGerais.apenasHoras !== undefined
@@ -4109,6 +4157,7 @@ function gerarMensagemPaciente(template, paciente, dadosGerais) {
 
   msg = msg.replace(/{nome}/gi, nome);
   msg = msg.replace(/{data}/gi, data);
+  msg = msg.replace(/{semana}/gi, semana);
   msg = msg.replace(/{horario}/gi, horario);
   msg = msg.replace(/{unidade}/gi, unidade);
   msg = msg.replace(/{profissional}/gi, profissional);
