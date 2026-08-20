@@ -1521,7 +1521,16 @@ function injetarPainelNaGaveta(drawer) {
   painel.id = "wa-painel-injetado";
   painel.innerHTML = `
     <div id="wa-painel-conteudo-scroll">
-      <button class="sa-btn-nova" id="wa-btn-chamar-busca">Agendar Nova Mensagem</button>
+      <div class="wa-painel-acoes-topo">
+        <button class="sa-btn-nova" id="wa-btn-chamar-busca" style="flex: 1;" data-wa-tooltip="Agendar envio manual">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="margin-right: 6px; vertical-align: middle;"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+          Agendar Mensagem
+        </button>
+        <button class="sa-btn-nova sa-btn-pdf" id="wa-btn-importar-pdf" style="flex: 1;" data-wa-tooltip="Importar lista de consultas em PDF e agendar automaticamente">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="margin-right: 6px; vertical-align: middle;"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+          Importar PDF
+        </button>
+      </div>
       <div id="wa-lista-agendamentos"></div>
     </div>
     <div id="wa-historico-drawer">
@@ -1541,6 +1550,13 @@ function injetarPainelNaGaveta(drawer) {
   drawer.appendChild(painel);
   renderizarLista();
   renderizarHistorico();
+
+  const btnImportarPdf = document.getElementById("wa-btn-importar-pdf");
+  if (btnImportarPdf) {
+    btnImportarPdf.addEventListener("click", () => {
+      abrirModalImportarPdf();
+    });
+  }
 
   if (pularPainelEIrDiretoParaBusca) {
     painel.style.display = "none";
@@ -2187,7 +2203,10 @@ function abrirModalEdicaoAgendamento(id) {
       const salvarBtn = document.getElementById("wa-salvar-btn");
       if (salvarBtn) {
         salvarBtn.textContent = "Salvar Edição";
-        salvarBtn.setAttribute("data-wa-tooltip", "Salvar alterações na mensagem agendada");
+        salvarBtn.setAttribute(
+          "data-wa-tooltip",
+          "Salvar alterações na mensagem agendada",
+        );
       }
 
       const agendadorInput = document.getElementById("wa-modal-agendador");
@@ -2211,7 +2230,9 @@ function abrirModalEdicaoAgendamento(id) {
 
       const preview = document.getElementById("wa-modal-anexo-preview");
       const nomeEl = document.getElementById("wa-modal-anexo-nome");
-      const iconEl = preview ? preview.querySelector(".wa-attachment-icon") : null;
+      const iconEl = preview
+        ? preview.querySelector(".wa-attachment-icon")
+        : null;
       if (tempAnexo && preview && nomeEl && iconEl) {
         nomeEl.textContent = tempAnexo.nome;
         if (tempAnexo.tipo && tempAnexo.tipo.startsWith("image/")) {
@@ -2229,15 +2250,19 @@ function abrirModalEdicaoAgendamento(id) {
 
       if (item.etiqueta) {
         setTimeout(() => {
-          const container = document.getElementById("wa-modal-etiquetas-existentes");
+          const container = document.getElementById(
+            "wa-modal-etiquetas-existentes",
+          );
           if (container) {
-            container.querySelectorAll(".wa-modal-etiqueta-pill-click").forEach((pill) => {
-              if (pill.textContent.trim().includes(item.etiqueta)) {
-                pill.classList.add("selecionada");
-                pill.style.outline = `2px solid ${item.etiquetaCor || "#00a884"}`;
-                pill.style.outlineOffset = "1.5px";
-              }
-            });
+            container
+              .querySelectorAll(".wa-modal-etiqueta-pill-click")
+              .forEach((pill) => {
+                if (pill.textContent.trim().includes(item.etiqueta)) {
+                  pill.classList.add("selecionada");
+                  pill.style.outline = `2px solid ${item.etiquetaCor || "#00a884"}`;
+                  pill.style.outlineOffset = "1.5px";
+                }
+              });
           }
         }, 50);
       }
@@ -2405,6 +2430,7 @@ function injetarModalEstilos() {
   document.body.appendChild(overlay);
 
   inicializarEventosEtiquetasModal();
+  injetarModalImportarPdf();
 
   // Inicializa Eventos de Anexo
   const anexoInput = document.getElementById("wa-modal-anexo-input");
@@ -3125,3 +3151,1093 @@ document.addEventListener(
   },
   true,
 );
+
+/* =========================================================
+   MÓDULO: IMPORTAÇÃO E AGENDAMENTO DE AGENDA EM PDF (SUS)
+   ========================================================= */
+
+const TEMPLATE_PADRAO_CONSULTA =
+  "Olá, *{nome}*!\n\nLembramos que você tem uma consulta/exame agendado para o dia *{data}* às *{horario}* na unidade *{unidade}* com o(a) profissional *{profissional}*.\n\n_Em caso de dúvidas ou necessidade de informações, responda a esta mensagem._";
+
+function injetarModalImportarPdf() {
+  if (document.getElementById("wa-modal-import-pdf-overlay")) return;
+
+  const overlay = document.createElement("div");
+  overlay.id = "wa-modal-import-pdf-overlay";
+  overlay.style.display = "none";
+  overlay.innerHTML = `
+    <div class="wa-modal-pdf-container">
+      <div class="wa-modal-pdf-header">
+        <div class="wa-modal-pdf-header-title">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="#00a884"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+          <h2>Importar Agenda de Consultas (PDF)</h2>
+          <span class="wa-badge-pdf-tag">e-SUS / Ministério da Saúde</span>
+        </div>
+        <button type="button" class="wa-modal-pdf-close" id="wa-pdf-modal-fechar" title="Fechar">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+        </button>
+      </div>
+
+      <div class="wa-modal-pdf-body">
+        <!-- VISTA 1: DROPZONE -->
+        <div id="wa-pdf-dropzone-view" class="wa-pdf-dropzone">
+          <input type="file" id="wa-pdf-file-input" accept="application/pdf" style="display: none;">
+          <div class="wa-pdf-dropzone-icon">
+            <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor"><path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/></svg>
+          </div>
+          <div class="wa-pdf-dropzone-title">Arraste o arquivo PDF da Agenda aqui ou clique para selecionar</div>
+          <div class="wa-pdf-dropzone-desc">Processamento local 100% seguro (nenhum dado é enviado a servidores externos)</div>
+        </div>
+
+        <!-- VISTA 2: PREVIEW E CONFIGURAÇÃO -->
+        <div id="wa-pdf-preview-view" style="display: none; flex-direction: column; gap: 16px;">
+          <!-- BARRA DE METADADOS (ORGANIZADA EM 2 LINHAS ESPAÇOSAS) -->
+          <div class="wa-pdf-meta-bar">
+            <!-- LINHA 1: DATAS E HORÁRIO -->
+            <div class="wa-pdf-meta-row wa-pdf-meta-row-top">
+              <div class="wa-pdf-meta-item">
+                <span class="wa-pdf-meta-label">📅 Data da Consulta</span>
+                <span class="wa-pdf-meta-value" id="wa-pdf-meta-data-consulta">-</span>
+              </div>
+              <div class="wa-pdf-meta-item">
+                <span class="wa-pdf-meta-label">⏰ Envio Agendado Para</span>
+                <span class="wa-pdf-meta-value wa-pdf-highlight" id="wa-pdf-meta-data-envio">-</span>
+              </div>
+              <div class="wa-pdf-meta-item wa-pdf-meta-item-time">
+                <span class="wa-pdf-meta-label">🕒 Horário do Envio</span>
+                <input type="time" id="wa-pdf-input-horario-envio" value="08:00" class="wa-pdf-time-input" title="Horário de envio dos lembretes">
+              </div>
+            </div>
+
+            <!-- LINHA 2: CAMPOS DE TEXTO COM LARGURA AMPLA -->
+            <div class="wa-pdf-meta-row wa-pdf-meta-row-bottom">
+              <div class="wa-pdf-meta-item">
+                <span class="wa-pdf-meta-label">🏥 Unidade de Saúde</span>
+                <input type="text" id="wa-pdf-meta-unidade" class="wa-pdf-meta-input" placeholder="Nome da Unidade">
+              </div>
+              <div class="wa-pdf-meta-item">
+                <span class="wa-pdf-meta-label">👩‍⚕️ Profissional</span>
+                <input type="text" id="wa-pdf-meta-profissional" class="wa-pdf-meta-input" placeholder="Nome do Profissional">
+              </div>
+            </div>
+          </div>
+
+          <!-- OPÇÕES E BADGE DA REGRA -->
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+              <div id="wa-pdf-regra-info" class="wa-pdf-regra-badge">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                <span id="wa-pdf-regra-texto">Regra: 1 dia antes da consulta</span>
+              </div>
+
+              <!-- TOGGLE FORMATO HORÁRIO -->
+              <label class="wa-pdf-toggle-group" for="wa-pdf-toggle-apenas-horas" title="Alternar formato: apenas horas (ex: 07h) ou horário completo (ex: 07:15)">
+                <span class="wa-pdf-switch">
+                  <input type="checkbox" id="wa-pdf-toggle-apenas-horas" checked>
+                  <span class="wa-pdf-slider"></span>
+                </span>
+                <span class="wa-pdf-toggle-label" id="wa-pdf-toggle-label-text">Usar apenas horas (ex: <strong>07h</strong>)</span>
+              </label>
+            </div>
+
+            <button type="button" id="wa-pdf-btn-trocar-arquivo" class="wa-pdf-btn-cancelar" style="font-size: 11px; padding: 4px 10px;">
+              🔄 Trocar PDF
+            </button>
+          </div>
+
+          <!-- MODELO DA MENSAGEM -->
+          <div class="wa-pdf-template-container">
+            <div class="wa-pdf-template-header">
+              <span>Modelo da Mensagem</span>
+              <div class="wa-pdf-tags-row">
+                <button type="button" class="wa-pdf-tag-btn" data-tag="*{nome}*" title="Inserir Nome em Negrito">+ *{nome}*</button>
+                <button type="button" class="wa-pdf-tag-btn" data-tag="*{data}*" title="Inserir Data da Consulta em Negrito">+ *{data}*</button>
+                <button type="button" class="wa-pdf-tag-btn" data-tag="*{horario}*" title="Inserir Horário em Negrito">+ *{horario}*</button>
+                <button type="button" class="wa-pdf-tag-btn" data-tag="*{unidade}*" title="Inserir Unidade">+ *{unidade}*</button>
+                <button type="button" class="wa-pdf-tag-btn" data-tag="*{profissional}*" title="Inserir Profissional">+ *{profissional}*</button>
+                <button type="button" class="wa-pdf-tag-btn" data-tag="{observacao}" title="Inserir Observação">+ {observacao}</button>
+              </div>
+            </div>
+            <textarea id="wa-pdf-template-input" class="wa-pdf-template-textarea" placeholder="Digite o modelo da mensagem... Suporta *negrito*, _itálico_, ~tachado~ e \`código\`"></textarea>
+            
+            <div class="wa-pdf-preview-chat-container">
+              <div class="wa-pdf-preview-bubble-label">
+                <span>Pré-visualização da mensagem (WhatsApp):</span>
+              </div>
+              <div class="wa-pdf-chat-wallpaper">
+                <div class="wa-msg-container wa-msg-outgoing">
+                  <div class="wa-msg-bubble">
+                    <span class="wa-msg-tail">
+                      <svg viewBox="0 0 8 13" width="8" height="13">
+                        <path opacity="0.13" d="M5.188 1H0v11.193l6.467-8.625C7.526 2.156 6.958 1 5.188 1z"/>
+                        <path fill="currentColor" d="M5.188 0H0v11.193l6.467-8.625C7.526 1.156 6.958 0 5.188 0z"/>
+                      </svg>
+                    </span>
+                    <div class="wa-msg-content-wrapper">
+                      <div class="wa-msg-selectable-text" id="wa-pdf-template-live-preview">...</div>
+                      <div class="wa-msg-meta-row">
+                        <span class="wa-msg-time" id="wa-pdf-preview-clock-time">08:00</span>
+                        <span class="wa-msg-status-ack">
+                          <svg viewBox="0 0 24 24" width="16" height="15" fill="currentColor"><path d="M14.73 6.01a1 1 0 0 1 1.41-.15l.01.01a1 1 0 0 1 .15 1.41L7.6 18.01a1 1 0 0 1-.73.37h-.05c-.26 0-.52-.11-.71-.3l-4.03-4.09a.99.99 0 0 1 0-1.41.99.99 0 0 1 1.41 0l3.25 3.29 7.99-9.86Zm5.71.12a1 1 0 0 1 1.41-.15h-.01a1 1 0 0 1 .15 1.41l-8.41 10.45a1 1 0 0 1-.73.37h-.05a1 1 0 0 1-.71-.3l-1.36-1.26a.55.55 0 0 1-.02-.81l.56-.68c.21-.2.53-.21.75-.03l.71.58 7.71-9.58Z"/></svg>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TABELA DE PACIENTES -->
+          <div class="wa-pdf-table-container">
+            <div class="wa-pdf-table-header-bar">
+              <h3>
+                <span>Pacientes Identificados</span>
+                <span class="wa-pdf-counter-badge" id="wa-pdf-total-badge">0</span>
+              </h3>
+            </div>
+            <div class="wa-pdf-table-scroll">
+              <table class="wa-pdf-table">
+                <thead>
+                  <tr>
+                    <th style="width: 36px; text-align: center;">
+                      <input type="checkbox" id="wa-pdf-select-all" checked style="cursor: pointer; accent-color: #00a884;">
+                    </th>
+                    <th style="width: 70px;">Horário</th>
+                    <th>Cidadão / Paciente</th>
+                    <th>Telefone de Envio</th>
+                    <th>Observação</th>
+                  </tr>
+                </thead>
+                <tbody id="wa-pdf-pacientes-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="wa-modal-pdf-footer">
+        <div class="wa-pdf-footer-info" id="wa-pdf-footer-count">Nenhum paciente selecionado</div>
+        <div class="wa-pdf-footer-actions">
+          <button type="button" class="wa-pdf-btn-cancelar" id="wa-pdf-btn-cancelar">Cancelar</button>
+          <button type="button" class="wa-pdf-btn-confirmar" id="wa-pdf-btn-confirmar" disabled>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+            <span id="wa-pdf-btn-confirmar-texto">Confirmar Agendamento</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  // Eventos do Modal
+  const btnFechar = overlay.querySelector("#wa-pdf-modal-fechar");
+  const btnCancelar = overlay.querySelector("#wa-pdf-btn-cancelar");
+  const dropzone = overlay.querySelector("#wa-pdf-dropzone-view");
+  const fileInput = overlay.querySelector("#wa-pdf-file-input");
+  const btnTrocar = overlay.querySelector("#wa-pdf-btn-trocar-arquivo");
+  const selectAll = overlay.querySelector("#wa-pdf-select-all");
+  const templateInput = overlay.querySelector("#wa-pdf-template-input");
+  const horarioEnvioInput = overlay.querySelector(
+    "#wa-pdf-input-horario-envio",
+  );
+  const unidadeInput = overlay.querySelector("#wa-pdf-meta-unidade");
+  const profissionalInput = overlay.querySelector("#wa-pdf-meta-profissional");
+  const btnConfirmar = overlay.querySelector("#wa-pdf-btn-confirmar");
+
+  if (btnFechar) btnFechar.addEventListener("click", fecharModalImportarPdf);
+  if (btnCancelar)
+    btnCancelar.addEventListener("click", fecharModalImportarPdf);
+
+  // Dropzone click & drag
+  if (dropzone && fileInput) {
+    dropzone.addEventListener("click", () => fileInput.click());
+    dropzone.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      dropzone.classList.add("dragover");
+    });
+    dropzone.addEventListener("dragleave", () => {
+      dropzone.classList.remove("dragover");
+    });
+    dropzone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      dropzone.classList.remove("dragover");
+      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+        processarArquivoPdf(e.dataTransfer.files[0]);
+      }
+    });
+    fileInput.addEventListener("change", (e) => {
+      if (e.target.files && e.target.files[0]) {
+        processarArquivoPdf(e.target.files[0]);
+      }
+    });
+  }
+
+  if (btnTrocar) {
+    btnTrocar.addEventListener("click", () => {
+      agendaPdfDados = null;
+      if (fileInput) fileInput.value = "";
+      document.getElementById("wa-pdf-dropzone-view").style.display = "flex";
+      document.getElementById("wa-pdf-preview-view").style.display = "none";
+      btnConfirmar.disabled = true;
+      document.getElementById("wa-pdf-footer-count").textContent =
+        "Nenhum arquivo carregado";
+    });
+  }
+
+  // Inserção de tags no template
+  overlay.querySelectorAll(".wa-pdf-tag-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const tag = btn.getAttribute("data-tag");
+      if (!tag || !templateInput) return;
+      const start = templateInput.selectionStart || 0;
+      const end = templateInput.selectionEnd || 0;
+      const text = templateInput.value;
+      templateInput.value =
+        text.substring(0, start) + tag + text.substring(end);
+      templateInput.focus();
+      templateInput.selectionStart = templateInput.selectionEnd =
+        start + tag.length;
+      atualizarLivePreviewTemplate();
+    });
+  });
+
+  if (templateInput) {
+    templateInput.addEventListener("input", () => {
+      if (agendaPdfDados) {
+        agendaPdfDados.templateMensagem = templateInput.value;
+      }
+      atualizarLivePreviewTemplate();
+    });
+  }
+
+  if (horarioEnvioInput) {
+    horarioEnvioInput.addEventListener("change", () => {
+      if (agendaPdfDados) {
+        agendaPdfDados.horarioEnvio = horarioEnvioInput.value || "08:00";
+        agendaPdfDados.dadosEnvioCalculados = calcularDataEnvioAgenda(
+          agendaPdfDados.dataConsulta,
+          agendaPdfDados.horarioEnvio,
+        );
+        atualizarHeaderEnvio();
+      }
+    });
+  }
+
+  if (unidadeInput) {
+    unidadeInput.addEventListener("input", () => {
+      if (agendaPdfDados) {
+        agendaPdfDados.unidade = unidadeInput.value;
+        atualizarLivePreviewTemplate();
+      }
+    });
+  }
+
+  if (profissionalInput) {
+    profissionalInput.addEventListener("input", () => {
+      if (agendaPdfDados) {
+        agendaPdfDados.profissional = profissionalInput.value;
+        atualizarLivePreviewTemplate();
+      }
+    });
+  }
+
+  // Toggle formato de horário ({horario}: apenas horas vs horas:minutos)
+  const toggleApenasHoras = overlay.querySelector(
+    "#wa-pdf-toggle-apenas-horas",
+  );
+  const toggleLabelText = overlay.querySelector("#wa-pdf-toggle-label-text");
+  if (toggleApenasHoras) {
+    toggleApenasHoras.addEventListener("change", () => {
+      const checked = toggleApenasHoras.checked;
+      if (agendaPdfDados) {
+        agendaPdfDados.apenasHoras = checked;
+      }
+      if (toggleLabelText) {
+        toggleLabelText.innerHTML = checked
+          ? "Usar apenas horas (ex: <strong>07h</strong>)"
+          : "Usar horário completo (ex: <strong>07:15</strong>)";
+      }
+      atualizarLivePreviewTemplate();
+    });
+  }
+
+  if (selectAll) {
+    selectAll.addEventListener("change", () => {
+      if (!agendaPdfDados || !agendaPdfDados.pacientes) return;
+      const checked = selectAll.checked;
+      agendaPdfDados.pacientes.forEach((p) => (p.selecionado = checked));
+      overlay
+        .querySelectorAll(".wa-pdf-paciente-checkbox")
+        .forEach((cb) => (cb.checked = checked));
+      atualizarContadorPacientes();
+    });
+  }
+
+  if (btnConfirmar) {
+    btnConfirmar.addEventListener("click", () => {
+      confirmarAgendamentoEmLotePdf();
+    });
+  }
+}
+
+function abrirModalImportarPdf() {
+  injetarModalImportarPdf();
+  const overlay = document.getElementById("wa-modal-import-pdf-overlay");
+  if (overlay) {
+    overlay.style.display = "flex";
+    if (agendaPdfDados) {
+      document.getElementById("wa-pdf-dropzone-view").style.display = "none";
+      document.getElementById("wa-pdf-preview-view").style.display = "flex";
+      renderizarPreviewAgendaPdf();
+    } else {
+      document.getElementById("wa-pdf-dropzone-view").style.display = "flex";
+      document.getElementById("wa-pdf-preview-view").style.display = "none";
+      const btnConfirmar = document.getElementById("wa-pdf-btn-confirmar");
+      if (btnConfirmar) btnConfirmar.disabled = true;
+      document.getElementById("wa-pdf-footer-count").textContent =
+        "Aguardando arquivo PDF...";
+    }
+  }
+}
+
+function fecharModalImportarPdf() {
+  const overlay = document.getElementById("wa-modal-import-pdf-overlay");
+  if (overlay) overlay.style.display = "none";
+}
+
+async function processarArquivoPdf(file) {
+  if (!file) return;
+  if (!file.name.toLowerCase().endsWith(".pdf")) {
+    alert("Por favor, selecione um arquivo no formato PDF.");
+    return;
+  }
+
+  const dropzoneTitle = document.querySelector(".wa-pdf-dropzone-title");
+  if (dropzoneTitle) {
+    dropzoneTitle.textContent = "Processando e extraindo dados da agenda...";
+  }
+
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const fullText = await extrairTextoDePdf(arrayBuffer);
+    const dadosParsed = parseAgendaSus(fullText);
+
+    if (!dadosParsed.pacientes || dadosParsed.pacientes.length === 0) {
+      alert(
+        "Nenhum agendamento com telefone válido foi identificado no PDF. Verifique se o arquivo segue o padrão de agenda do e-SUS / Ministério da Saúde.",
+      );
+      if (dropzoneTitle) {
+        dropzoneTitle.textContent =
+          "Arraste o arquivo PDF da Agenda aqui ou clique para selecionar";
+      }
+      return;
+    }
+
+    const horarioEnvio = "08:00";
+    const dadosEnvio = calcularDataEnvioAgenda(
+      dadosParsed.dataConsulta,
+      horarioEnvio,
+    );
+
+    agendaPdfDados = {
+      arquivoNome: file.name,
+      dataConsulta: dadosParsed.dataConsulta,
+      unidade: dadosParsed.unidade,
+      profissional: dadosParsed.profissional,
+      equipe: dadosParsed.equipe,
+      pacientes: dadosParsed.pacientes,
+      templateMensagem: TEMPLATE_PADRAO_CONSULTA,
+      horarioEnvio: horarioEnvio,
+      dadosEnvioCalculados: dadosEnvio,
+      apenasHoras: true,
+    };
+
+    document.getElementById("wa-pdf-dropzone-view").style.display = "none";
+    document.getElementById("wa-pdf-preview-view").style.display = "flex";
+
+    renderizarPreviewAgendaPdf();
+  } catch (err) {
+    console.error("[WAgenda] Erro ao processar PDF:", err);
+    alert(
+      "Erro ao ler o arquivo PDF. Certifique-se de que é um documento válido. Detalhes: " +
+        err.message,
+    );
+    if (dropzoneTitle) {
+      dropzoneTitle.textContent =
+        "Arraste o arquivo PDF da Agenda aqui ou clique para selecionar";
+    }
+  }
+}
+
+async function extrairTextoDePdf(arrayBuffer) {
+  if (typeof pdfjsLib === "undefined") {
+    throw new Error(
+      "Biblioteca PDF.js não encontrada. Recarregue a página do WhatsApp Web.",
+    );
+  }
+
+  // Configura para usar o fake worker já carregado em memória sem tentar criar Worker via URL externa
+  if (typeof window !== "undefined" && window.pdfjsWorker) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "";
+    pdfjsLib.GlobalWorkerOptions.workerPort = null;
+  }
+
+  const loadingTask = pdfjsLib.getDocument({
+    data: arrayBuffer,
+    isEvalSupported: false,
+    useWorkerFetch: false,
+  });
+  const pdf = await loadingTask.promise;
+  let fullText = "";
+
+  for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+    const page = await pdf.getPage(pageNum);
+    const textContent = await page.getTextContent();
+    const items = textContent.items;
+
+    let lastY = null;
+    let pageText = "";
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.str === undefined) continue;
+      const currentY = item.transform ? Math.round(item.transform[5]) : 0;
+      if (lastY === null || Math.abs(currentY - lastY) > 4) {
+        if (pageText.length > 0 && !pageText.endsWith("\n")) {
+          pageText += "\n";
+        }
+        lastY = currentY;
+      } else {
+        if (
+          pageText.length > 0 &&
+          !pageText.endsWith(" ") &&
+          !pageText.endsWith("\n") &&
+          !item.str.startsWith(" ")
+        ) {
+          pageText += " ";
+        }
+      }
+      pageText += item.str;
+    }
+    fullText += pageText + "\n\n";
+  }
+
+  return fullText;
+}
+
+function parseAgendaSus(fullText) {
+  // 1. Extrair Metadados do Cabeçalho
+  const dataMatch = fullText.match(/Data:\s*(\d{2}\/\d{2}\/\d{4})/i);
+  const dataConsulta = dataMatch ? dataMatch[1] : "";
+
+  const profMatch = fullText.match(/Profissional:\s*([^\n\r]+)/i);
+  const profissional = profMatch ? profMatch[1].trim() : "";
+
+  const equipeMatch = fullText.match(/Equipe:\s*([^\n\r]+)/i);
+  const equipe = equipeMatch ? equipeMatch[1].trim() : "";
+
+  const unidadeMatch = fullText.match(
+    /UNIDADE DE SAÚDE\s+([^\n\r]+(?:\r?\n[^\n\r]+)?)/i,
+  );
+  let unidade = "";
+  if (unidadeMatch) {
+    unidade = unidadeMatch[1]
+      .replace(/\r?\n/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    unidade = unidade.replace(/\s*AGENDA.*$/i, "").trim();
+  }
+
+  // 2. Localizar slots de horários
+  const timeRegex = /(?:^|\n|\r)(\d{2}:\d{2})\s+/g;
+  const matches = [];
+  let m;
+  while ((m = timeRegex.exec(fullText)) !== null) {
+    matches.push({
+      time: m[1],
+      index: m.index + (m[0].startsWith("\n") || m[0].startsWith("\r") ? 1 : 0),
+      rawMatch: m[0],
+    });
+  }
+
+  const pacientes = [];
+
+  for (let i = 0; i < matches.length; i++) {
+    const curr = matches[i];
+    const nextIndex =
+      i + 1 < matches.length ? matches[i + 1].index : fullText.length;
+    const block = fullText
+      .substring(curr.index + curr.time.length, nextIndex)
+      .trim();
+
+    // Filtros de linhas não-pacientes
+    const upperBlock = block.toUpperCase();
+    if (
+      upperBlock === "PAC" ||
+      upperBlock.startsWith("PAC\n") ||
+      upperBlock.startsWith("PAC\r") ||
+      upperBlock.startsWith("COMPLEMENTO VAGA") ||
+      upperBlock.startsWith("GESTANTE") ||
+      upperBlock.startsWith("OUTROS") ||
+      upperBlock.startsWith("BLOQUEIO") ||
+      upperBlock.startsWith("RESERVA") ||
+      upperBlock.startsWith("VACINACAO")
+    ) {
+      const hasCell = /(?:\(\d{2}\)|\b\d{2}\b)?\s*9\s*\d{4}[-\s]?\d{4}/.test(
+        block,
+      );
+      if (!hasCell) continue;
+    }
+
+    // Limpar linhas de CNS para não confundir com telefone
+    const blockWithoutCns = block
+      .replace(/CNS:\s*\d+/gi, "")
+      .replace(/CNS:\s*N[ãa]o informado/gi, "");
+
+    // Extrair exclusivamente números de celular (DDD + 9 dígitos ou 9 dígitos iniciando em 9)
+    const phoneRegex = /(?:\(\d{2}\)|\b\d{2}\b)?\s*9\s*\d{4}[-\s]?\d{4}/g;
+    const rawPhones = blockWithoutCns.match(phoneRegex) || [];
+
+    const celularesFormatados = [];
+    rawPhones.forEach((p) => {
+      const digits = p.replace(/\D/g, "");
+      // Celular com DDD (11 dígitos, 3º dígito é 9: DD9XXXXXXXX)
+      if (digits.length === 11 && digits[2] === "9") {
+        const formatted = `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+        if (!celularesFormatados.includes(formatted)) {
+          celularesFormatados.push(formatted);
+        }
+      } else if (digits.length === 9 && digits[0] === "9") {
+        // Celular sem DDD (9 dígitos iniciando em 9: 9XXXXXXXX)
+        const formatted = `${digits.slice(0, 5)}-${digits.slice(5)}`;
+        if (!celularesFormatados.includes(formatted)) {
+          celularesFormatados.push(formatted);
+        }
+      }
+    });
+
+    // Desconsidera o paciente se não tiver nenhum celular válido (ex: apenas telefone fixo)
+    if (celularesFormatados.length === 0) {
+      continue;
+    }
+
+    // Extrair observação
+    let observacao = "";
+    const obsMatch = block.match(
+      /Observa[çc][ãa]o:\s*([\s\S]*?)(?=(?:Impresso em|\d{2}:\d{2}|$))/i,
+    );
+    if (obsMatch) {
+      observacao = obsMatch[1]
+        .replace(/\r?\n/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+      observacao = observacao
+        .replace(/Impresso em.*$/i, "")
+        .replace(/Pág\..*$/i, "")
+        .trim();
+    }
+
+    // Extrair Nome do Cidadão
+    const lines = block
+      .split(/\r?\n/)
+      .map((l) => l.trim())
+      .filter(Boolean);
+    const nameLines = [];
+
+    for (const line of lines) {
+      if (
+        /\d+\s*anos/i.test(line) ||
+        /\d+\s*m[êe]ses/i.test(line) ||
+        /\d+\s*m[êe]s/i.test(line) ||
+        /\d+\s*dias/i.test(line) ||
+        /^CNS:/i.test(line) ||
+        /^Observa[çc][ãa]o:/i.test(line) ||
+        /^Impresso em/i.test(line) ||
+        phoneRegex.test(line) ||
+        /(?:\(\d{2}\)|\b\d{2}\b)?\s*\d{4}[-\s]?\d{4}/.test(line) ||
+        /^(RUA|AV|AVENIDA|ALAMEDA|ESTRADA|TRAVESSA|RODOVIA|DERLI|MAURO|CARLOS|ADELINA|DARWIN|GERALDO|PARQUE|VILA|JARDIM|VOTORANTIM)/i.test(
+          line,
+        )
+      ) {
+        break;
+      }
+      nameLines.push(line);
+    }
+
+    let nome = nameLines.join(" ").trim().replace(/\s+/g, " ");
+
+    if (nome) {
+      pacientes.push({
+        id: `pac_${Date.now()}_${i}`,
+        horario: curr.time,
+        nome: nome,
+        telefones: celularesFormatados,
+        telefoneEscolhido: celularesFormatados[0] || "",
+        observacao: observacao,
+        selecionado: true,
+      });
+    }
+  }
+
+  return {
+    dataConsulta,
+    profissional,
+    equipe,
+    unidade,
+    pacientes,
+  };
+}
+
+function calcularDataEnvioAgenda(dataConsultaStr, horarioEnvio = "08:00") {
+  if (!dataConsultaStr) return null;
+  const parts = dataConsultaStr.split("/");
+  if (parts.length !== 3) return null;
+  const dia = parseInt(parts[0], 10);
+  const mes = parseInt(parts[1], 10) - 1;
+  const ano = parseInt(parts[2], 10);
+
+  const dataConsulta = new Date(ano, mes, dia);
+  const diaSemana = dataConsulta.getDay(); // 0 = Dom, 1 = Seg, 2 = Ter, 3 = Qua, 4 = Qui, 5 = Sex, 6 = Sáb
+
+  const dataEnvio = new Date(dataConsulta);
+  let regraAplicada = "1 dia antes da consulta";
+
+  if (diaSemana === 1) {
+    // Segunda-feira -> Enviar na sexta-feira anterior (3 dias antes)
+    dataEnvio.setDate(dataEnvio.getDate() - 3);
+    regraAplicada = "Segunda-feira: Envio antecipado para Sexta-feira";
+  } else if (diaSemana === 0) {
+    // Domingo -> Enviar na sexta-feira (2 dias antes)
+    dataEnvio.setDate(dataEnvio.getDate() - 2);
+    regraAplicada = "Domingo: Envio antecipado para Sexta-feira";
+  } else {
+    dataEnvio.setDate(dataEnvio.getDate() - 1);
+  }
+
+  const [h, m] = (horarioEnvio || "08:00")
+    .split(":")
+    .map((n) => parseInt(n, 10));
+  dataEnvio.setHours(isNaN(h) ? 8 : h, isNaN(m) ? 0 : m, 0, 0);
+
+  const anoEnvio = dataEnvio.getFullYear();
+  const mesEnvio = String(dataEnvio.getMonth() + 1).padStart(2, "0");
+  const diaEnvio = String(dataEnvio.getDate()).padStart(2, "0");
+  const horaEnvio = String(dataEnvio.getHours()).padStart(2, "0");
+  const minEnvio = String(dataEnvio.getMinutes()).padStart(2, "0");
+
+  const diasSemanaNomes = [
+    "Domingo",
+    "Segunda-feira",
+    "Terça-feira",
+    "Quarta-feira",
+    "Quinta-feira",
+    "Sexta-feira",
+    "Sábado",
+  ];
+
+  return {
+    timestamp: dataEnvio.getTime(),
+    dataFormatada: `${diaEnvio}/${mesEnvio}/${anoEnvio}`,
+    dataIso: `${anoEnvio}-${mesEnvio}-${diaEnvio}T${horaEnvio}:${minEnvio}`,
+    dataEnvioStr: `${diaEnvio}/${mesEnvio}/${anoEnvio}`,
+    horaEnvioStr: `${horaEnvio}:${minEnvio}`,
+    diaSemanaEnvio: diasSemanaNomes[dataEnvio.getDay()],
+    diaSemanaConsulta: diasSemanaNomes[diaSemana],
+    regraAplicada: regraAplicada,
+    isSegunda: diaSemana === 1,
+  };
+}
+
+function atualizarHeaderEnvio() {
+  if (!agendaPdfDados || !agendaPdfDados.dadosEnvioCalculados) return;
+  const {
+    dataFormatada,
+    horaEnvioStr,
+    diaSemanaEnvio,
+    diaSemanaConsulta,
+    regraAplicada,
+    isSegunda,
+  } = agendaPdfDados.dadosEnvioCalculados;
+
+  const dataEnvioEl = document.getElementById("wa-pdf-meta-data-envio");
+  if (dataEnvioEl) {
+    dataEnvioEl.textContent = `${dataFormatada} (${diaSemanaEnvio})`;
+  }
+
+  const regraEl = document.getElementById("wa-pdf-regra-info");
+  const regraTextoEl = document.getElementById("wa-pdf-regra-texto");
+  if (regraEl && regraTextoEl) {
+    regraTextoEl.textContent = `Regra: ${regraAplicada} (${diaSemanaConsulta} -> ${diaSemanaEnvio})`;
+    if (isSegunda) {
+      regraEl.classList.add("regra-segunda");
+    } else {
+      regraEl.classList.remove("regra-segunda");
+    }
+  }
+}
+
+function renderizarPreviewAgendaPdf() {
+  if (!agendaPdfDados) return;
+
+  // Atualizar Metadados
+  const dataConsultaEl = document.getElementById("wa-pdf-meta-data-consulta");
+  if (dataConsultaEl) {
+    dataConsultaEl.textContent = `${agendaPdfDados.dataConsulta} (${agendaPdfDados.dadosEnvioCalculados.diaSemanaConsulta})`;
+  }
+
+  const unidadeInput = document.getElementById("wa-pdf-meta-unidade");
+  if (unidadeInput) {
+    unidadeInput.value = agendaPdfDados.unidade || "";
+  }
+
+  const profissionalInput = document.getElementById("wa-pdf-meta-profissional");
+  if (profissionalInput) {
+    profissionalInput.value = agendaPdfDados.profissional || "";
+  }
+
+  const templateInput = document.getElementById("wa-pdf-template-input");
+  if (templateInput) {
+    templateInput.value =
+      agendaPdfDados.templateMensagem || TEMPLATE_PADRAO_CONSULTA;
+  }
+
+  const horarioInput = document.getElementById("wa-pdf-input-horario-envio");
+  if (horarioInput) {
+    horarioInput.value = agendaPdfDados.horarioEnvio || "08:00";
+  }
+
+  const toggleApenasHoras = document.getElementById(
+    "wa-pdf-toggle-apenas-horas",
+  );
+  const toggleLabelText = document.getElementById("wa-pdf-toggle-label-text");
+  if (toggleApenasHoras) {
+    toggleApenasHoras.checked = agendaPdfDados.apenasHoras !== false;
+    if (toggleLabelText) {
+      toggleLabelText.innerHTML = toggleApenasHoras.checked
+        ? "Usar apenas horas (ex: <strong>07h</strong>)"
+        : "Usar horário completo (ex: <strong>07:15</strong>)";
+    }
+  }
+
+  atualizarHeaderEnvio();
+  atualizarLivePreviewTemplate();
+
+  // Renderizar Tabela de Pacientes
+  const tbody = document.getElementById("wa-pdf-pacientes-tbody");
+  if (!tbody) return;
+
+  tbody.innerHTML = "";
+  const totalBadge = document.getElementById("wa-pdf-total-badge");
+  if (totalBadge) {
+    totalBadge.textContent = `${agendaPdfDados.pacientes.length} pacientes`;
+  }
+
+  agendaPdfDados.pacientes.forEach((paciente, idx) => {
+    const tr = document.createElement("tr");
+
+    // Coluna Telefone (Select se tiver múltiplos ou Input se tiver 1)
+    let telefoneHtml = "";
+    if (paciente.telefones.length > 1) {
+      const options = paciente.telefones
+        .map(
+          (t) =>
+            `<option value="${t}" ${t === paciente.telefoneEscolhido ? "selected" : ""}>${t}</option>`,
+        )
+        .join("");
+      telefoneHtml = `<select class="wa-pdf-phone-select" data-pac-idx="${idx}">${options}</select>`;
+    } else {
+      telefoneHtml = `<span style="color: #00a884; font-weight: 500;">${paciente.telefoneEscolhido || paciente.telefones[0] || "-"}</span>`;
+    }
+
+    tr.innerHTML = `
+      <td style="text-align: center;">
+        <input type="checkbox" class="wa-pdf-paciente-checkbox" data-pac-idx="${idx}" ${paciente.selecionado ? "checked" : ""} style="cursor: pointer; accent-color: #00a884;">
+      </td>
+      <td>
+        <span class="wa-pdf-time-badge">${paciente.horario}</span>
+      </td>
+      <td>
+        <strong style="color: var(--primary, #e9edef); font-weight: 600;">${paciente.nome}</strong>
+      </td>
+      <td>
+        ${telefoneHtml}
+      </td>
+      <td>
+        ${paciente.observacao ? `<span class="wa-pdf-obs-badge" title="${paciente.observacao}">${paciente.observacao}</span>` : '<span style="color: var(--secondary, #8696a0); font-size: 11px;">-</span>'}
+      </td>
+    `;
+
+    tbody.appendChild(tr);
+  });
+
+  // Eventos de Checkbox individual
+  tbody.querySelectorAll(".wa-pdf-paciente-checkbox").forEach((cb) => {
+    cb.addEventListener("change", (e) => {
+      const idx = parseInt(e.target.getAttribute("data-pac-idx"), 10);
+      if (agendaPdfDados.pacientes[idx]) {
+        agendaPdfDados.pacientes[idx].selecionado = e.target.checked;
+      }
+      atualizarContadorPacientes();
+    });
+  });
+
+  // Eventos de troca de telefone
+  tbody.querySelectorAll(".wa-pdf-phone-select").forEach((sel) => {
+    sel.addEventListener("change", (e) => {
+      const idx = parseInt(e.target.getAttribute("data-pac-idx"), 10);
+      if (agendaPdfDados.pacientes[idx]) {
+        agendaPdfDados.pacientes[idx].telefoneEscolhido = e.target.value;
+      }
+    });
+  });
+
+  atualizarContadorPacientes();
+}
+
+function formatarTextoWhatsApp(texto) {
+  if (!texto) return "";
+
+  // 1. Escapar caracteres HTML para segurança
+  let safe = texto
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+
+  // 2. Blocos de código ```...```
+  safe = safe.replace(/```([\s\S]*?)```/g, (match, p1) => {
+    return `<pre class="wa-msg-code-block"><code>${p1}</code></pre>`;
+  });
+
+  // 3. Código inline `...`
+  safe = safe.replace(/`([^`\n]+)`/g, (match, p1) => {
+    return `<code class="wa-msg-code-inline">${p1}</code>`;
+  });
+
+  // 4. Negrito: *texto* (não cruzar quebras de linha)
+  safe = safe.replace(
+    /(?<=^|[\s\p{P}])\*([^*\n]+)\*(?=$|[\s\p{P}])/gu,
+    "<strong>$1</strong>",
+  );
+
+  // 5. Itálico: _texto_
+  safe = safe.replace(
+    /(?<=^|[\s\p{P}])_([^_\n]+)_(?=$|[\s\p{P}])/gu,
+    "<em>$1</em>",
+  );
+
+  // 6. Tachado: ~texto~
+  safe = safe.replace(
+    /(?<=^|[\s\p{P}])~([^~\n]+)~(?=$|[\s\p{P}])/gu,
+    "<del>$1</del>",
+  );
+
+  // 7. Citações: &gt; texto
+  safe = safe.replace(
+    /(?:^|\n)&gt;\s*([^\n]+)/g,
+    "<blockquote>$1</blockquote>",
+  );
+
+  // 8. Quebras de linha normais para <br> fora de <pre>
+  const parts = safe.split(/(<pre[\s\S]*?<\/pre>)/g);
+  safe = parts
+    .map((part) => {
+      if (part.startsWith("<pre")) return part;
+      return part.replace(/\n/g, "<br>");
+    })
+    .join("");
+
+  return safe;
+}
+
+function atualizarLivePreviewTemplate() {
+  const previewEl = document.getElementById("wa-pdf-template-live-preview");
+  if (!previewEl) return;
+
+  const clockEl = document.getElementById("wa-pdf-preview-clock-time");
+  if (clockEl && agendaPdfDados) {
+    clockEl.textContent = agendaPdfDados.horarioEnvio || "08:00";
+  }
+
+  const templateInput = document.getElementById("wa-pdf-template-input");
+  const template = templateInput
+    ? templateInput.value
+    : TEMPLATE_PADRAO_CONSULTA;
+
+  if (
+    agendaPdfDados &&
+    agendaPdfDados.pacientes &&
+    agendaPdfDados.pacientes.length > 0
+  ) {
+    const primeiro = agendaPdfDados.pacientes[0];
+    const msg = gerarMensagemPaciente(template, primeiro, agendaPdfDados);
+    previewEl.innerHTML = formatarTextoWhatsApp(msg);
+  } else {
+    const msgExemplo =
+      "Olá, *Nome do Paciente*!\n\nLembramos que você tem uma consulta/exame agendado para o dia *DD/MM/AAAA* às *07h* na unidade *Unidade de Saúde* com o(a) profissional *Médico(a)*.\n\n_Em caso de dúvidas ou reagendamento, responda a esta mensagem._";
+    previewEl.innerHTML = formatarTextoWhatsApp(msgExemplo);
+  }
+}
+
+function formatarApenasHora(horarioStr) {
+  if (!horarioStr) return "";
+  const match = String(horarioStr).match(/(\d{1,2})/);
+  if (match) {
+    const h = match[1].padStart(2, "0");
+    return `${h}h`;
+  }
+  return horarioStr;
+}
+
+function gerarMensagemPaciente(template, paciente, dadosGerais) {
+  let msg = template || "";
+  const nome = paciente.nome || "";
+  const data = (dadosGerais && dadosGerais.dataConsulta) || "";
+
+  const usarApenasHoras =
+    dadosGerais && dadosGerais.apenasHoras !== undefined
+      ? dadosGerais.apenasHoras
+      : true;
+
+  const horario = usarApenasHoras
+    ? formatarApenasHora(paciente.horario || "")
+    : paciente.horario || "";
+
+  const unidade = (dadosGerais && dadosGerais.unidade) || "";
+  const profissional = (dadosGerais && dadosGerais.profissional) || "";
+  const observacao = paciente.observacao || "";
+
+  msg = msg.replace(/{nome}/gi, nome);
+  msg = msg.replace(/{data}/gi, data);
+  msg = msg.replace(/{horario}/gi, horario);
+  msg = msg.replace(/{unidade}/gi, unidade);
+  msg = msg.replace(/{profissional}/gi, profissional);
+  msg = msg.replace(/{observacao}/gi, observacao);
+
+  return msg.trim();
+}
+
+function atualizarContadorPacientes() {
+  if (!agendaPdfDados || !agendaPdfDados.pacientes) return;
+
+  const selecionados = agendaPdfDados.pacientes.filter((p) => p.selecionado);
+  const total = agendaPdfDados.pacientes.length;
+
+  const footerCountEl = document.getElementById("wa-pdf-footer-count");
+  if (footerCountEl) {
+    footerCountEl.textContent = `${selecionados.length} de ${total} pacientes selecionados para envio`;
+  }
+
+  const btnConfirmar = document.getElementById("wa-pdf-btn-confirmar");
+  const btnTexto = document.getElementById("wa-pdf-btn-confirmar-texto");
+
+  if (btnConfirmar) {
+    btnConfirmar.disabled = selecionados.length === 0;
+  }
+  if (btnTexto) {
+    btnTexto.textContent =
+      selecionados.length > 0
+        ? `Agendar ${selecionados.length} Mensagens`
+        : "Confirmar Agendamento";
+  }
+
+  const selectAll = document.getElementById("wa-pdf-select-all");
+  if (selectAll) {
+    selectAll.checked = selecionados.length === total && total > 0;
+    selectAll.indeterminate =
+      selecionados.length > 0 && selecionados.length < total;
+  }
+}
+
+function confirmarAgendamentoEmLotePdf() {
+  if (!agendaPdfDados || !agendaPdfDados.pacientes) return;
+
+  const selecionados = agendaPdfDados.pacientes.filter((p) => p.selecionado);
+  if (selecionados.length === 0) {
+    alert("Selecione pelo menos um paciente para agendar o envio.");
+    return;
+  }
+
+  const template =
+    document.getElementById("wa-pdf-template-input")?.value ||
+    agendaPdfDados.templateMensagem ||
+    TEMPLATE_PADRAO_CONSULTA;
+
+  // Recalcular com o horário atual configurado
+  const horarioEnvio =
+    document.getElementById("wa-pdf-input-horario-envio")?.value || "08:00";
+  const dadosEnvio = calcularDataEnvioAgenda(
+    agendaPdfDados.dataConsulta,
+    horarioEnvio,
+  );
+
+  const dataList = selecionados.map((paciente, idx) => {
+    const msgTexto = gerarMensagemPaciente(template, paciente, agendaPdfDados);
+    return {
+      id: `msg_${Date.now()}_${idx}`,
+      nome: paciente.nome,
+      telefone: paciente.telefoneEscolhido || paciente.telefones[0] || "",
+      agendador: "Agendador SUS",
+      criadoEm: Date.now(),
+      imagem: "",
+      mensagem: msgTexto,
+      tempo: dadosEnvio.timestamp,
+      etiqueta: "Consulta",
+      etiquetaCor: "#00a884",
+      anexo: null,
+      dadosConsulta: {
+        dataConsulta: agendaPdfDados.dataConsulta,
+        horarioConsulta: paciente.horario,
+        unidade: agendaPdfDados.unidade,
+        profissional: agendaPdfDados.profissional,
+        observacao: paciente.observacao,
+      },
+    };
+  });
+
+  chrome.runtime.sendMessage(
+    {
+      action: "agendar_mensagem_multipla",
+      dataList: dataList,
+    },
+    () => {
+      if (chrome.runtime.lastError) {
+        console.error("Erro WAgenda:", chrome.runtime.lastError.message);
+        alert(
+          "Erro ao agendar mensagens. Por favor, recarregue a página do WhatsApp Web e tente novamente.",
+        );
+        return;
+      }
+
+      fecharModalImportarPdf();
+      agendaPdfDados = null;
+
+      renderizarLista();
+      atualizarContadorBadge();
+
+      mostrarToastNotificacao(
+        `✅ ${dataList.length} mensagens agendadas com sucesso para ${dadosEnvio.dataFormatada} às ${dadosEnvio.horaEnvioStr}!`,
+      );
+    },
+  );
+}
+
+function mostrarToastNotificacao(texto) {
+  const antigo = document.querySelector(".wa-toast-notif");
+  if (antigo) antigo.remove();
+
+  const toast = document.createElement("div");
+  toast.className = "wa-toast-notif";
+  toast.innerHTML = `
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+    <span>${texto}</span>
+  `;
+  document.body.appendChild(toast);
+
+  setTimeout(() => {
+    toast.style.transition = "opacity 0.3s ease-out, transform 0.3s ease-out";
+    toast.style.opacity = "0";
+    toast.style.transform = "translateY(20px)";
+    setTimeout(() => toast.remove(), 300);
+  }, 4500);
+}

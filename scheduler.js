@@ -68,7 +68,7 @@ function processarFila() {
 }
 
 function iniciarFluxoDeEnvio(tarefa, finalizar) {
-  const { nome, mensagem, anexo } = tarefa;
+  const { nome, telefone, mensagem, anexo } = tarefa;
 
   const btnConversas = document.querySelector('button[aria-label="Conversas"]');
   if (btnConversas) {
@@ -87,16 +87,62 @@ function iniciarFluxoDeEnvio(tarefa, finalizar) {
         document.querySelector('input[data-tab="3"]') ||
         document.querySelector('input[role="textbox"]');
       if (!search) return finalizar();
-      simularDigitacao(search, nome);
+
+      const termoBusca = nome || telefone;
+      simularDigitacao(search, termoBusca);
+
       setTimeout(() => {
-        const contato = document.querySelector(`span[title="${nome}"]`);
+        let contato = document.querySelector(`span[title="${nome}"]`);
+        if (!contato && telefone) {
+          const telLimpo = telefone.replace(/\D/g, "");
+          contato =
+            document.querySelector(`span[title*="${telefone}"]`) ||
+            document.querySelector(`span[title*="${telLimpo}"]`);
+        }
+
         if (contato) {
           const card =
             contato.closest('div[data-testid="cell-frame-container"]') ||
             contato.closest('div[role="listitem"]');
-          card.dispatchEvent(
-            new MouseEvent("click", { bubbles: true, cancelable: true }),
-          );
+          if (card) {
+            card.dispatchEvent(
+              new MouseEvent("click", { bubbles: true, cancelable: true }),
+            );
+          }
+          executarEnvioMensagem();
+        } else if (telefone && termoBusca !== telefone) {
+          // Tenta pesquisar pelo telefone se busca por nome não deu resultado
+          search.value = "";
+          const telDigitos = telefone.replace(/\D/g, "");
+          simularDigitacao(search, telDigitos);
+          setTimeout(() => {
+            const cardGenerico =
+              document.querySelector('div[data-testid="cell-frame-container"]') ||
+              document.querySelector('div[role="listitem"]');
+            if (cardGenerico) {
+              cardGenerico.dispatchEvent(
+                new MouseEvent("click", { bubbles: true, cancelable: true }),
+              );
+              executarEnvioMensagem();
+            } else {
+              falhaContato();
+            }
+          }, 1500);
+        } else {
+          falhaContato();
+        }
+
+        function falhaContato() {
+          const back =
+            document.querySelector('button[aria-label="Voltar"]') ||
+            document
+              .querySelector('span[data-icon="back-refreshed"]')
+              ?.closest("button");
+          if (back) back.click();
+          finalizar();
+        }
+
+        function executarEnvioMensagem() {
           setTimeout(() => {
             const caixa =
               document.querySelector(
@@ -185,34 +231,14 @@ function iniciarFluxoDeEnvio(tarefa, finalizar) {
                     setTimeout(finalizar, 1000);
                   }, 500);
                 }
-              } else {
-                simularDigitacao(caixa, mensagem);
-                setTimeout(() => {
-                  const enviar =
-                    document.querySelector('div[role="button"][aria-label^="Enviar"]') ||
-                    document.querySelector('button[aria-label^="Enviar"]') ||
-                    document
-                      .querySelector('span[data-testid="wds-ic-send-filled"]')
-                      ?.closest('div[role="button"], button') ||
-                    document
-                      .querySelector('span[data-icon="send"]')
-                      ?.closest('div[role="button"], button');
-                  if (enviar) enviar.click();
-                  setTimeout(finalizar, 1000);
-                }, 500);
               }
-            } else finalizar();
+            } else {
+              finalizar();
+            }
           }, 1500);
-        } else {
-          const back =
-            document.querySelector('button[aria-label="Voltar"]') ||
-            document
-              .querySelector('span[data-icon="back-refreshed"]')
-              ?.closest("button");
-          if (back) back.click();
-          finalizar();
         }
       }, 1500);
     }, 1500);
   }, 400);
 }
+

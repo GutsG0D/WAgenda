@@ -14,3 +14,4 @@ let tempAnexo = null;
 let inicializado = false;
 let currentTab = "";
 let editingMessageId = null;
+let agendaPdfDados = null;

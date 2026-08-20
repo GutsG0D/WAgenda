@@ -1745,3 +1745,822 @@ body.agendador-ativo .rel-ponteiros {
 .wa-emoji-tabs::-webkit-scrollbar {
   display: none; /* Hide scrollbar for Chrome/Safari */
 }
+
+/* =========================================================
+   ESTILOS - IMPORTAÇÃO DE AGENDA EM PDF (WAGENDA)
+   ========================================================= */
+
+.wa-painel-acoes-topo {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.wa-painel-acoes-topo .sa-btn-nova {
+  margin-bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  padding: 12px 8px;
+  gap: 4px;
+}
+
+.sa-btn-pdf {
+  background: #00a884 !important;
+  color: #ffffff !important;
+}
+
+.sa-btn-pdf:hover {
+  background: #029071 !important;
+}
+
+#wa-modal-import-pdf-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(11, 20, 26, 0.85);
+  backdrop-filter: blur(4px);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: waFadeIn 0.2s ease-out;
+}
+
+.wa-modal-pdf-container {
+  background-color: var(--WDS-surface-default, #111b21);
+  color: var(--primary, #e9edef);
+  width: 860px;
+  max-width: 95vw;
+  max-height: 92vh;
+  border-radius: 12px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+  border: 1px solid var(--WDS-lines-outline-default, rgba(134, 150, 160, 0.15));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  font-family: inherit;
+}
+
+.wa-modal-pdf-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px;
+  border-bottom: 1px solid
+    var(--WDS-lines-outline-default, rgba(134, 150, 160, 0.15));
+  background-color: var(--WDS-surface-emphasized, #202c33);
+}
+
+.wa-modal-pdf-header-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.wa-modal-pdf-header-title h2 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--primary, #e9edef);
+}
+
+.wa-modal-pdf-header-title .wa-badge-pdf-tag {
+  background: rgba(0, 168, 132, 0.15);
+  color: #00a884;
+  border: 1px solid rgba(0, 168, 132, 0.3);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.wa-modal-pdf-close {
+  background: none;
+  border: none;
+  color: var(--secondary, #8696a0);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.wa-modal-pdf-close:hover {
+  color: var(--primary, #e9edef);
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.wa-modal-pdf-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* DROPZONE */
+.wa-pdf-dropzone {
+  border: 2px dashed rgba(0, 168, 132, 0.4);
+  background-color: rgba(0, 168, 132, 0.03);
+  border-radius: 10px;
+  padding: 40px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.wa-pdf-dropzone:hover,
+.wa-pdf-dropzone.dragover {
+  border-color: #00a884;
+  background-color: rgba(0, 168, 132, 0.08);
+  transform: scale(1.005);
+}
+
+.wa-pdf-dropzone-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(0, 168, 132, 0.15);
+  color: #00a884;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wa-pdf-dropzone-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--primary, #e9edef);
+}
+
+.wa-pdf-dropzone-desc {
+  font-size: 12px;
+  color: var(--secondary, #8696a0);
+}
+
+/* META BAR (2 LINHAS ESPAÇOSAS) */
+.wa-pdf-meta-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background-color: var(--WDS-surface-emphasized, #202c33);
+  border: 1px solid var(--WDS-lines-outline-default, rgba(134, 150, 160, 0.15));
+  border-radius: 8px;
+  padding: 14px 16px;
+  box-sizing: border-box;
+}
+
+.wa-pdf-meta-row {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.wa-pdf-meta-row-top {
+  display: grid;
+  grid-template-columns: 1.2fr 1.3fr auto;
+  gap: 16px;
+  align-items: center;
+  border-bottom: 1px solid rgba(134, 150, 160, 0.1);
+  padding-bottom: 10px;
+}
+
+.wa-pdf-meta-row-bottom {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+@media (max-width: 680px) {
+  .wa-pdf-meta-row-top {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .wa-pdf-meta-row-bottom {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
+
+.wa-pdf-meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.wa-pdf-meta-item-time {
+  min-width: 120px;
+}
+
+.wa-pdf-meta-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--secondary, #8696a0);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.wa-pdf-meta-value {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--primary, #e9edef);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wa-pdf-meta-value.wa-pdf-highlight {
+  color: #00a884;
+}
+
+.wa-pdf-time-input {
+  background: var(--WDS-surface-default, #111b21);
+  border: 1px solid var(--WDS-lines-outline-default, rgba(134, 150, 160, 0.25));
+  color: var(--primary, #e9edef);
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 13px;
+  font-family: inherit;
+  width: 100%;
+  max-width: 120px;
+  height: 34px;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.wa-pdf-time-input:focus {
+  border-color: #00a884;
+  box-shadow: 0 0 0 1px #00a884;
+}
+
+.wa-pdf-meta-input {
+  background: var(--WDS-surface-default, #111b21);
+  border: 1px solid var(--WDS-lines-outline-default, rgba(134, 150, 160, 0.25));
+  color: var(--primary, #e9edef);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-family: inherit;
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+  height: 36px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.wa-pdf-meta-input:focus {
+  outline: none;
+  border-color: #00a884;
+  box-shadow: 0 0 0 1px #00a884;
+}
+
+.wa-pdf-regra-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 168, 132, 0.15);
+  color: #00a884;
+  border: 1px solid rgba(0, 168, 132, 0.3);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  width: fit-content;
+}
+
+.wa-pdf-regra-badge.regra-segunda {
+  background: rgba(254, 192, 47, 0.15);
+  color: #fec02f;
+  border-color: rgba(254, 192, 47, 0.3);
+}
+
+/* TOGGLE SWITCH FORMATO HORÁRIO */
+.wa-pdf-toggle-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--WDS-lines-outline-default, rgba(134, 150, 160, 0.15));
+  padding: 4px 10px;
+  border-radius: 20px;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s ease;
+}
+
+.wa-pdf-toggle-group:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(0, 168, 132, 0.4);
+}
+
+.wa-pdf-switch {
+  position: relative;
+  display: inline-block;
+  width: 32px;
+  height: 18px;
+  flex-shrink: 0;
+  margin: 0;
+}
+
+.wa-pdf-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.wa-pdf-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #3b4a54;
+  transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 18px;
+}
+
+.wa-pdf-slider:before {
+  position: absolute;
+  content: "";
+  height: 14px;
+  width: 14px;
+  left: 2px;
+  bottom: 2px;
+  background-color: #ffffff;
+  transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.wa-pdf-switch input:checked + .wa-pdf-slider {
+  background-color: #00a884;
+}
+
+.wa-pdf-switch input:checked + .wa-pdf-slider:before {
+  transform: translateX(14px);
+}
+
+.wa-pdf-toggle-label {
+  font-size: 11.5px;
+  color: var(--primary, #e9edef);
+  font-weight: 500;
+}
+
+.wa-pdf-toggle-label strong {
+  color: #00a884;
+}
+
+/* TEMPLATE EDITOR */
+.wa-pdf-template-container {
+  background-color: var(--WDS-surface-emphasized, #202c33);
+  border: 1px solid var(--WDS-lines-outline-default, rgba(134, 150, 160, 0.12));
+  border-radius: 8px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.wa-pdf-template-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.wa-pdf-template-header span {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--secondary, #8696a0);
+  text-transform: uppercase;
+}
+
+.wa-pdf-tags-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.wa-pdf-tag-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--WDS-lines-outline-default, rgba(134, 150, 160, 0.2));
+  color: #00a884;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-family: monospace;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.wa-pdf-tag-btn:hover {
+  background: rgba(0, 168, 132, 0.15);
+  border-color: #00a884;
+}
+
+.wa-pdf-template-textarea {
+  width: 100%;
+  min-height: 70px;
+  background-color: var(--WDS-surface-default, #111b21);
+  border: 1px solid var(--WDS-lines-outline-default, rgba(134, 150, 160, 0.2));
+  border-radius: 6px;
+  color: var(--primary, #e9edef);
+  padding: 10px 12px;
+  font-size: 13px;
+  font-family: inherit;
+  resize: vertical;
+  line-height: 1.4;
+  box-sizing: border-box;
+}
+
+.wa-pdf-template-textarea:focus {
+  outline: none;
+  border-color: #00a884;
+}
+
+.wa-pdf-preview-chat-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.wa-pdf-preview-bubble-label {
+  font-size: 11px;
+  color: var(--secondary, #8696a0);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  display: flex;
+  align-items: center;
+}
+
+.wa-pdf-chat-wallpaper {
+  /* background-color: #0b141a; */
+  background-image:
+    radial-gradient(
+      circle at 50% 50%,
+      rgba(255, 255, 255, 0.02) 0%,
+      transparent 100%
+    ),
+    linear-gradient(rgba(11, 20, 26, 0.94), rgba(11, 20, 26, 0.94));
+  border-radius: 8px;
+  padding: 16px 20px;
+  border: 1px solid var(--WDS-lines-outline-default, rgba(134, 150, 160, 0.15));
+  display: flex;
+  justify-content: flex-end;
+  min-height: 80px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.wa-msg-container {
+  max-width: 82%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.wa-msg-container.wa-msg-outgoing {
+  align-self: flex-end;
+}
+
+.wa-msg-bubble {
+  background-color: #005c4b;
+  color: #e9edef;
+  border-radius: 7.5px;
+  border-top-right-radius: 0;
+  box-shadow: 0 1px 0.5px rgba(11, 20, 26, 0.13);
+  position: relative;
+  padding: 6px 9px 8px 9px;
+  font-family: inherit;
+  font-size: 14.2px;
+  line-height: 19px;
+  word-wrap: break-word;
+  white-space: normal;
+  display: inline-block;
+  min-width: 120px;
+}
+
+.wa-msg-tail {
+  position: absolute;
+  top: 0;
+  right: -8px;
+  width: 8px;
+  height: 13px;
+  color: #005c4b;
+  pointer-events: none;
+}
+
+.wa-msg-tail svg {
+  display: block;
+}
+
+.wa-msg-content-wrapper {
+  position: relative;
+}
+
+.wa-msg-selectable-text {
+  font-size: 14.2px;
+  line-height: 19px;
+  color: #e9edef;
+  user-select: text;
+  display: inline;
+}
+
+/* Suporte aos Códigos Markdown do WhatsApp */
+.wa-msg-selectable-text strong,
+.wa-msg-selectable-text b {
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.wa-msg-selectable-text em,
+.wa-msg-selectable-text i {
+  font-style: italic;
+}
+
+.wa-msg-selectable-text del,
+.wa-msg-selectable-text s {
+  text-decoration: line-through;
+  opacity: 0.85;
+}
+
+.wa-msg-selectable-text .wa-msg-code-inline {
+  font-family: Consolas, Menlo, Monaco, "Lucida Console", monospace;
+  font-size: 12.8px;
+  background-color: rgba(0, 0, 0, 0.22);
+  padding: 1.5px 5px;
+  border-radius: 3.5px;
+  vertical-align: baseline;
+  color: #e9edef;
+}
+
+.wa-msg-selectable-text .wa-msg-code-block {
+  font-family: Consolas, Menlo, Monaco, "Lucida Console", monospace;
+  font-size: 12.8px;
+  background-color: rgba(0, 0, 0, 0.28);
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin: 6px 0;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  color: #e9edef;
+}
+
+.wa-msg-selectable-text blockquote {
+  margin: 4px 0;
+  padding: 2px 0 2px 10px;
+  border-inline-start: 3.5px solid rgba(255, 255, 255, 0.4);
+  color: rgba(233, 237, 239, 0.9);
+  font-style: normal;
+}
+
+.wa-msg-meta-row {
+  float: right;
+  margin: 4px 0 -4px 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  user-select: none;
+}
+
+.wa-msg-time {
+  font-size: 11px;
+  line-height: 15px;
+  color: rgba(233, 237, 239, 0.6);
+  font-weight: 400;
+}
+
+.wa-msg-status-ack {
+  display: inline-flex;
+  align-items: center;
+  color: #53bdeb; /* Azul do double check lido */
+  line-height: 1;
+}
+
+/* TABELA DE PACIENTES */
+.wa-pdf-table-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wa-pdf-table-header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.wa-pdf-table-header-bar h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary, #e9edef);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wa-pdf-table-header-bar .wa-pdf-counter-badge {
+  background: rgba(0, 168, 132, 0.2);
+  color: #00a884;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.wa-pdf-table-scroll {
+  max-height: 280px;
+  overflow-y: auto;
+  border: 1px solid var(--WDS-lines-outline-default, rgba(134, 150, 160, 0.15));
+  border-radius: 8px;
+  background-color: var(--WDS-surface-emphasized, #202c33);
+}
+
+.wa-pdf-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  text-align: left;
+}
+
+.wa-pdf-table th {
+  background-color: rgba(17, 27, 33, 0.8);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 10px 12px;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  border-bottom: 1px solid
+    var(--WDS-lines-outline-default, rgba(134, 150, 160, 0.15));
+}
+
+.wa-pdf-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(134, 150, 160, 0.08);
+  color: var(--primary, #e9edef);
+  vertical-align: middle;
+}
+
+.wa-pdf-table tr:hover td {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.wa-pdf-time-badge {
+  background: rgba(134, 150, 160, 0.15);
+  color: var(--primary, #e9edef);
+  font-weight: 600;
+  font-size: 12px;
+  padding: 3px 6px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.wa-pdf-phone-select {
+  background: var(--WDS-surface-default, #111b21);
+  border: 1px solid var(--WDS-lines-outline-default, rgba(134, 150, 160, 0.25));
+  color: #00a884;
+  border-radius: 4px;
+  padding: 4px 6px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  max-width: 170px;
+}
+
+.wa-pdf-obs-badge {
+  font-size: 11px;
+  color: var(--secondary, #8696a0);
+  background: rgba(134, 150, 160, 0.08);
+  padding: 2px 6px;
+  border-radius: 4px;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-block;
+}
+
+/* FOOTER */
+.wa-modal-pdf-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-top: 1px solid
+    var(--WDS-lines-outline-default, rgba(134, 150, 160, 0.15));
+  background-color: var(--WDS-surface-emphasized, #202c33);
+}
+
+.wa-pdf-footer-info {
+  font-size: 13px;
+  color: var(--secondary, #8696a0);
+}
+
+.wa-pdf-footer-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.wa-pdf-btn-cancelar {
+  background: transparent;
+  border: 1px solid var(--WDS-lines-outline-default, rgba(134, 150, 160, 0.3));
+  color: var(--primary, #e9edef);
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-weight: 500;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.wa-pdf-btn-cancelar:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.wa-pdf-btn-confirmar {
+  background-color: #00a884;
+  color: #ffffff;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background-color 0.2s;
+}
+
+.wa-pdf-btn-confirmar:hover {
+  background-color: #029071;
+}
+
+.wa-pdf-btn-confirmar:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* TOAST NOTIFICAÇÃO */
+.wa-toast-notif {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background-color: #00a884;
+  color: #ffffff;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  animation: waToastIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes waToastIn {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

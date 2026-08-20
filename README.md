@@ -31,6 +31,7 @@ _O WAgenda é uma extensão para o Chrome que permite agendar mensagens no Whats
 - **Label Tagging & Colors**: Add custom colored labels to your scheduled messages using a native-feeling color selector and keyboard composition interface.
 - **Dynamic Scheduling Filter**: A premium filter button in the header allows you to filter pending scheduled messages and past history dynamically by label.
 - **Native Label Manager Popover**: A dedicated management entry button next to the filter button opens a clean floating menu. Perform inline editing of label names and colors with dynamically reactive circular previews, "Etiqueta" descriptors, and premium checkmark/cancel SVGs that trigger immediate cascade updates on all storage data.
+- **SUS Appointment PDF Import & Auto-Scheduling**: Upload health unit appointment agenda PDFs (e-SUS / Ministry of Health format). Automatically extracts patients, appointment dates, times, phone numbers, health units, doctors, and notes. Calculates reminder dispatch dates (1 day prior, or previous Friday for Monday appointments) and bulk-schedules personalized messages with live preview and custom templates!
 - **Pending Count Badge**: A badge on the WAgenda icon shows the number of currently scheduled messages.
 - **Modular Architecture**: Clean, refactored codebase separated into highly optimized modules (`globals.js`, `emojis.js`, `utils.js`, `ui.js`, `scheduler.js`, `content.js`) with all custom styles centralizing inside `styles.css`.
 
@@ -39,6 +40,7 @@ _O WAgenda é uma extensão para o Chrome que permite agendar mensagens no Whats
 ### Funcionalidades 🇧🇷
 
 - **Interface Integrada**: Adiciona um ícone de relógio ao cabeçalho do WhatsApp Web para acessar todos os recursos de agendamento sem sair da página.
+- **Importação de Agenda SUS em PDF & Agendamento Automático**: Importe PDFs de agenda de consultas/exames (padrão e-SUS / Ministério da Saúde). A extensão extrai automaticamente todos os pacientes, datas, horários, múltiplos telefones, unidade de saúde, médico e observações. Calcula as datas de disparo (1 dia antes ou sexta-feira para consultas de segunda-feira) e realiza o agendamento em lote com modelo customizável e pré-visualização!
 - **Agendamento Multi-Contato**: Agende uma única mensagem para vários contatos de uma só vez selecionando múltiplos destinatários da sua lista.
 - **Seletor Visual de Contatos no Modal**: Exibição premium no modal mostrando as fotos de perfil, nomes e botões `✖` para remoção rápida de destinatários.
 - **Suporte Completo a Anexos (Imagens e Documentos)**: Agende mensagens acompanhadas de arquivos (fotos, vídeos ou documentos/PDFs de até 4MB). Inclui preview dinâmico no modal (miniatura para imagens ou ícone elegante + nome do arquivo para documentos).

@@ -21,6 +21,8 @@
     {
       "matches": ["https://web.whatsapp.com/*"],
       "js": [
+        "lib/pdf.worker.min.js",
+        "lib/pdf.min.js",
         "globals.js",
         "emojis.js",
         "utils.js",
@@ -33,7 +35,7 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["icons/icon128.png"],
+      "resources": ["icons/icon128.png", "lib/pdf.worker.min.js"],
       "matches": ["https://web.whatsapp.com/*"]
     }
   ]
