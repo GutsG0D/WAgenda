@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "WAgenda",
-  "version": "1.3",
+  "version": "1.4.0",
   "description": "Agenda mensagens automáticas para o WhatsApp Web.",
   "permissions": ["storage", "alarms", "tabs", "scripting", "unlimitedStorage"],
   "host_permissions": ["https://web.whatsapp.com/*"],
