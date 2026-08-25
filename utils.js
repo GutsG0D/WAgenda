@@ -6,94 +6,108 @@ function svgNativo() {
 
 function simularClique(elemento, nomeElemento = "elemento") {
   if (!elemento) return;
+  try {
+    elemento.focus?.();
 
-  const disparar = (el) => {
-    if (!el) return;
+    const rect = elemento.getBoundingClientRect?.() || {
+      left: 100,
+      top: 100,
+      width: 20,
+      height: 20,
+    };
+    const x = rect.left + Math.max(1, rect.width / 2);
+    const y = rect.top + Math.max(1, rect.height / 2);
+
+    const eventProps = {
+      bubbles: true,
+      cancelable: true,
+      view: window,
+      detail: 1,
+      button: 0,
+      buttons: 1,
+      clientX: x,
+      clientY: y,
+      screenX: x,
+      screenY: y,
+    };
+
+    // 1. Pointer events
     try {
-      // PointerEvents para o React/Web
-      el.dispatchEvent?.(
-        new PointerEvent("pointerdown", {
-          bubbles: true,
-          cancelable: true,
-          view: window,
-          button: 0,
-        }),
-      );
-      el.dispatchEvent?.(
-        new PointerEvent("pointerup", {
-          bubbles: true,
-          cancelable: true,
-          view: window,
-          button: 0,
-        }),
-      );
+      elemento.dispatchEvent(new PointerEvent("pointerdown", eventProps));
+    } catch (e) {}
 
-      // MouseEvents clássicos
-      el.dispatchEvent?.(
-        new MouseEvent("mousedown", {
-          bubbles: true,
-          cancelable: true,
-          view: window,
-          button: 0,
-        }),
-      );
-      el.dispatchEvent?.(
-        new MouseEvent("mouseup", {
-          bubbles: true,
-          cancelable: true,
-          view: window,
-          button: 0,
-        }),
-      );
+    // 2. Mouse events
+    try {
+      elemento.dispatchEvent(new MouseEvent("mousedown", eventProps));
+    } catch (e) {}
 
-      el.click?.();
-
-      el.dispatchEvent?.(
-        new MouseEvent("click", {
-          bubbles: true,
-          cancelable: true,
-          view: window,
-          button: 0,
-        }),
+    try {
+      elemento.dispatchEvent(
+        new PointerEvent("pointerup", { ...eventProps, buttons: 0 }),
       );
-    } catch (e) {
-      console.error(`[WAgenda] Erro ao disparar clique em el:`, el, e);
+    } catch (e) {}
+
+    try {
+      elemento.dispatchEvent(
+        new MouseEvent("mouseup", { ...eventProps, buttons: 0 }),
+      );
+    } catch (e) {}
+
+    // 3. Clique nativo e evento de clique com bubbling
+    if (typeof elemento.click === "function") {
+      elemento.click();
     }
-  };
-
-  // Dispara em cascata subindo a árvore DOM (pais)
-  let atual = elemento;
-  for (let i = 0; i < 4; i++) {
-    if (!atual) break;
-    disparar(atual);
-    atual = atual.parentElement;
+    try {
+      elemento.dispatchEvent(
+        new MouseEvent("click", { ...eventProps, buttons: 0 }),
+      );
+    } catch (e) {}
+  } catch (e) {
+    console.error(`[WAgenda] Erro ao disparar clique em ${nomeElemento}:`, elemento, e);
   }
-
-  // Dispara em cascata descendo a árvore DOM (filhos)
-  elemento
-    .querySelectorAll("div, span, svg, path")
-    .forEach((child) => disparar(child));
 }
 
 function simularDigitacao(el, text) {
+  if (!el) return;
   el.focus();
   if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+    try {
+      el.select();
+      document.execCommand("selectAll", false, null);
+      document.execCommand("delete", false, null);
+    } catch (e) {}
+
     const setter = Object.getOwnPropertyDescriptor(
       window.HTMLInputElement.prototype,
       "value",
-    ).set;
+    )?.set;
     if (setter) setter.call(el, text);
+    else el.value = text;
+
+    el.dispatchEvent(
+      new InputEvent("input", {
+        bubbles: true,
+        inputType: "insertText",
+        data: text,
+      }),
+    );
     el.dispatchEvent(new Event("input", { bubbles: true }));
+    el.dispatchEvent(new Event("change", { bubbles: true }));
   } else {
-    const dataTransfer = new DataTransfer();
-    dataTransfer.setData("text/plain", text);
-    dataTransfer.setData("text", text);
-    const event = new ClipboardEvent("paste", {
-      clipboardData: dataTransfer,
-      bubbles: true,
-      cancelable: true,
-    });
-    el.dispatchEvent(event);
+    el.focus();
+    try {
+      document.execCommand("selectAll", false, null);
+      document.execCommand("delete", false, null);
+      document.execCommand("insertText", false, text);
+    } catch (e) {}
+    el.dispatchEvent(
+      new InputEvent("input", {
+        bubbles: true,
+        inputType: "insertText",
+        data: text,
+      }),
+    );
+    el.dispatchEvent(new Event("input", { bubbles: true }));
   }
 }
 

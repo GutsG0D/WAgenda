@@ -2179,7 +2179,7 @@ function abrirModalEdicaoAgendamento(id) {
 
     editingMessageId = item.id;
 
-    contatosSelecionados = [{ nome: item.nome, imagem: item.imagem || "" }];
+    contatosSelecionados = [{ nome: item.nome, imagem: item.imagem || "", telefone: item.telefone || "" }];
 
     tempMsgText = item.mensagem || "";
 
@@ -2951,6 +2951,7 @@ function injetarModalEstilos() {
       return {
         id: `msg_${Date.now()}_${idx}`,
         nome: contato.nome,
+        telefone: contato.telefone || "",
         agendador: agendador,
         criadoEm: Date.now(),
         imagem: contato.imagem,
@@ -3127,6 +3128,33 @@ document.addEventListener(
       const nome = spanNome.getAttribute("title");
       const imgElement = cardContato.querySelector('img[src*="whatsapp.net"]');
       const clickedImgUrl = imgElement ? imgElement.src : "";
+
+      // Tenta extrair telefone: procura nos elementos pai por data-id (jid do contato)
+      let telefoneCapturado = "";
+      const rowEl = cardContato.closest('[data-id]') || cardContato.closest('[data-testid="list-item-0"]');
+      if (rowEl) {
+        const dataId = rowEl.getAttribute("data-id") || "";
+        // data-id pode conter algo como "55119...@c.us"
+        const match = dataId.match(/(\d{10,15})/);
+        if (match) telefoneCapturado = match[1];
+      }
+      // Fallback: subtítulo do card frequentemente é o número formatado
+      if (!telefoneCapturado) {
+        const subtitleEl = cardContato.querySelector('[data-testid="cell-frame-secondary"] span') ||
+          cardContato.querySelector('.copyable-text') ||
+          cardContato.querySelectorAll('span[title]')[1];
+        if (subtitleEl) {
+          const subtitleText = subtitleEl.getAttribute("title") || subtitleEl.textContent || "";
+          const digits = subtitleText.replace(/\D/g, "");
+          if (digits.length >= 10) telefoneCapturado = digits;
+        }
+      }
+      // Último fallback: se o próprio nome parecer ser um número
+      if (!telefoneCapturado) {
+        const nomeDigits = nome.replace(/\D/g, "");
+        if (nomeDigits.length >= 10) telefoneCapturado = nomeDigits;
+      }
+
       const btnVoltar =
         document
           .querySelector('span[data-icon="back-refreshed"]')
@@ -3136,12 +3164,13 @@ document.addEventListener(
       modoAgendamento = false;
       abertoPeloAgendador = false;
 
+      const novoContato = { nome: nome, imagem: clickedImgUrl, telefone: telefoneCapturado };
       if (contatosSelecionados.length > 0) {
         if (!contatosSelecionados.find((c) => c.nome === nome)) {
-          contatosSelecionados.push({ nome: nome, imagem: clickedImgUrl });
+          contatosSelecionados.push(novoContato);
         }
       } else {
-        contatosSelecionados = [{ nome: nome, imagem: clickedImgUrl }];
+        contatosSelecionados = [novoContato];
       }
 
       abrirModalAgendamento();
@@ -4083,8 +4112,12 @@ function atualizarLivePreviewTemplate() {
     const msg = gerarMensagemPaciente(template, primeiro, agendaPdfDados);
     previewEl.innerHTML = formatarTextoWhatsApp(msg);
   } else {
-    const toggleApenasHoras = document.getElementById("wa-pdf-toggle-apenas-horas");
-    const usarApenasHoras = toggleApenasHoras ? toggleApenasHoras.checked : true;
+    const toggleApenasHoras = document.getElementById(
+      "wa-pdf-toggle-apenas-horas",
+    );
+    const usarApenasHoras = toggleApenasHoras
+      ? toggleApenasHoras.checked
+      : true;
     const horaExemplo = usarApenasHoras ? "07h" : "07:15";
     const msgExemplo =
       "Olá, *Nome do Paciente*, tudo bem? Aqui é da equipe da sua *Unidade de Saúde*. 👋\n\n" +
